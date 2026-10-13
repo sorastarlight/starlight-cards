@@ -1,12 +1,12 @@
-# Starlight Card Binder — Cursor handoff
+# StarlightCard Site — Cursor handoff
 
-Project: `S:\NewVTuberProject\Stream Assets\Games\StarlightCards`
+Project: `S:\NewVTuberProject\Stream Assets\Games\StarlightCard Site`
 
 ## Start here
 
 Continue this existing project from this Games folder path (same pattern as PokemonRPG under `Stream Assets\Games`). This directory is the git clone of `https://github.com/sorastarlight/starlight-card-binder.git` on `main`.
 
-The older Codex/Documents clone under `C:\Users\FET\Documents\Codex\...\starlight-card-binder` is historical. Prefer this `S:\...\StarlightCards` workspace for new work.
+The older Codex/Documents clone and the prior `StarlightCards` folder name are historical. Prefer this `S:\...\StarlightCard Site` workspace for new work.
 
 ## Product
 

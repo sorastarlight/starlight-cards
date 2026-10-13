@@ -8,7 +8,7 @@ The active milestone is **V1.0 — Foundation**. Unless the user explicitly chan
 
 ## Working agreement
 
-- Preferred local home: `S:\NewVTuberProject\Stream Assets\Games\StarlightCards` (Games folder setup, same pattern as PokemonRPG). Start from `CURSOR_HANDOFF.md` when orienting a new chat.
+- Preferred local home: `S:\NewVTuberProject\Stream Assets\Games\StarlightCard Site` (Games folder setup, same pattern as PokemonRPG). Start from `CURSOR_HANDOFF.md` when orienting a new chat.
 - Work in this local clone. The live site is not edited directly in GitHub's cloud UI.
 - Use the currently checked-out branch, normally `main`. Do not create a branch, worktree, fork, or pull request unless the user explicitly asks for one.
 - Commit and push when a task is complete unless the user says otherwise.
