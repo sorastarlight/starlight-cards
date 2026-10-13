@@ -80,7 +80,7 @@ Seventh slice: **collector recipient typeahead** — search by username, display
 
 ## Supabase project (MCP)
 
-- Project: `starlight-card-binder` (`noxfauxbfdqgoxgiwrpu`, `us-west-2`, ACTIVE_HEALTHY)
+- Project: `starlight-cards` (`noxfauxbfdqgoxgiwrpu`, `us-west-2`, ACTIVE_HEALTHY)
 - Client URL matches `docs/js/supabase-client.js`
 - Remote migrations: `20260720160000_production_baseline`, `20260720180926_production_schema`, `20260721175802_revoke_anon_admin_rpc_execute`, `20260721191343_revoke_anon_collector_rpc_execute`
 - Readiness snapshot: 3 users, 2 series, 24 cards, 3 shop boosters

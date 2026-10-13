@@ -4,7 +4,7 @@ Project: `S:\NewVTuberProject\Stream Assets\Games\StarlightCard Site`
 
 ## Start here
 
-Continue this existing project from this Games folder path (same pattern as PokemonRPG under `Stream Assets\Games`). This directory is the git clone of `https://github.com/sorastarlight/starlight-card-binder.git` on `main`.
+Continue this existing project from this Games folder path (same pattern as PokemonRPG under `Stream Assets\Games`). This directory is the git clone of `https://github.com/sorastarlight/starlight-cards.git` on `main`. Live site: `https://cards.sorastarlight.net/`.
 
 The older Codex/Documents clone and the prior `StarlightCards` folder name are historical. Prefer this `S:\...\StarlightCard Site` workspace for new work.
 

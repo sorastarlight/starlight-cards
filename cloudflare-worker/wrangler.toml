@@ -8,7 +8,7 @@ workers_dev = true
 [vars]
 SUPABASE_URL = "https://noxfauxbfdqgoxgiwrpu.supabase.co"
 WORKER_PUBLIC_URL = "https://starlight-twitch-integration.fetkun.workers.dev"
-SITE_URL = "https://sorastarlight.github.io/starlight-card-binder"
+SITE_URL = "https://cards.sorastarlight.net"
 
 # Secrets (set via `wrangler secret put`, never commit):
 # TWITCH_CLIENT_ID
