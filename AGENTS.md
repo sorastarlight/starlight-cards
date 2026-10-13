@@ -8,9 +8,10 @@ The active milestone is **V1.0 — Foundation**. Unless the user explicitly chan
 
 ## Working agreement
 
-- Work in the existing local clone. The live site is not edited directly in GitHub's cloud UI.
+- Preferred local home: `S:\NewVTuberProject\Stream Assets\Games\StarlightCards` (Games folder setup, same pattern as PokemonRPG). Start from `CURSOR_HANDOFF.md` when orienting a new chat.
+- Work in this local clone. The live site is not edited directly in GitHub's cloud UI.
 - Use the currently checked-out branch, normally `main`. Do not create a branch, worktree, fork, or pull request unless the user explicitly asks for one.
-- Keep edits local until the user asks to commit or publish. Do not push automatically.
+- Commit and push when a task is complete unless the user says otherwise.
 - Before editing, inspect the current files and preserve unrelated user changes.
 - Organize work by milestone and a small, testable vertical slice. State the active milestone and acceptance criteria when beginning substantial work.
 - Do not combine a broad refactor with unrelated feature work.
