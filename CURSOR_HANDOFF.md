@@ -19,14 +19,18 @@ Canonical guidance: `AGENTS.md`. Active milestone: **V1.0 — Foundation**, plus
 ### Shared experience — home featured sets
 - Home **Featured sets** strip uses live card catalog (`8c66c6b`). Verified live: `homeFeaturedSets` + `home-featured-sets.js` on Pages.
 
+### Pack opening — Reveal All / Skip
+- Canonical reveal engine `v1.5.18`: presentation-only **Reveal All** and **Skip to results** (never grants inventory).
+- Consumers bumped to `reward-reveal.js?v=1.5.18`. Motion contract hash unchanged.
+
 ## Current task
 
-Continue slice 2 (nav/token consistency) then slice 3 (reveal fanfare: Reveal All/Skip polish). Authenticated Daily Pack open/replay smoke still needs QA credentials.
+Continue slice 3 fanfare: in-reveal sound mute control (localStorage already gates SFX), then restrained rarity polish / reduced-motion spot-check. Then slice 4 collection/progression. Authenticated Daily Pack open/replay smoke still needs QA credentials.
 
 ## Validation evidence
 
-- Commits on `main`: `df258b2` (recovery), `8c66c6b` (home featured).
-- `npm run check`: 215 pass.
+- Commits on `main`: `df258b2` (recovery), `8c66c6b` (home featured), pending Reveal All/Skip.
+- `npm run check`: 216 pass (Reveal All/Skip tests included).
 - Local DB suite + concurrency PASS; production overloads + grants verified; mode unchanged.
 
 ## Unresolved / watch

@@ -247,7 +247,7 @@ function acquireRevealViewportLock(doc) {
   };
 }
 
-export const REVEAL_PRESENTATION_VERSION = '1.5.17';
+export const REVEAL_PRESENTATION_VERSION = '1.5.18';
 
 const REVEAL_STYLESHEET_ID = `starlight-reveal-v${REVEAL_PRESENTATION_VERSION.replace(/\./g, '')}`;
 const REVEAL_STYLESHEET_URL = new URL(
@@ -530,6 +530,19 @@ export async function revealRewardSequence(cards = [], options = {}) {
       cardsReadyText
     );
     const progress = createElement(doc, 'p', 'st-r3-progress');
+    const skipBar = createElement(doc, 'div', 'st-r3-skip-bar');
+    const revealAllButton = createElement(
+      doc,
+      'button',
+      'st-r3-skip-btn',
+      revealCopy.revealAllCta || 'Reveal All'
+    );
+    const skipButton = createElement(
+      doc,
+      'button',
+      'st-r3-skip-btn st-r3-skip-btn--ghost',
+      revealCopy.skipCta || 'Skip to results'
+    );
     const stage = createElement(doc, 'div', 'st-r3-stage');
     overlay.dataset.phase = 'pack';
     dialog.dataset.phase = 'pack';
@@ -635,10 +648,22 @@ export async function revealRewardSequence(cards = [], options = {}) {
     resultsScene.append(resultsHeading, resultsGrid, doneButton);
 
     progress.hidden = true;
+    revealAllButton.type = 'button';
+    skipButton.type = 'button';
+    revealAllButton.setAttribute(
+      'aria-label',
+      revealCopy.revealAllLabel || 'Reveal remaining cards without individual animations'
+    );
+    skipButton.setAttribute(
+      'aria-label',
+      revealCopy.skipLabel || 'Skip to results without revealing remaining cards one by one'
+    );
+    skipBar.hidden = true;
+    skipBar.append(revealAllButton, skipButton);
     stage.append(packScene, pileScene, revealScene, resultsScene);
     headerCopy.append(eyebrow, title);
     header.append(headerCopy, closeButton);
-    dialog.append(header, liveStatus, progress, stage);
+    dialog.append(header, liveStatus, progress, skipBar, stage);
     overlay.append(dialog);
     overlay.hidden = true;
     doc.body.append(overlay);
@@ -717,6 +742,13 @@ export async function revealRewardSequence(cards = [], options = {}) {
       phase = nextPhase;
       overlay.dataset.phase = nextPhase;
       dialog.dataset.phase = nextPhase;
+      const canSkip =
+        nextPhase === 'pile' ||
+        nextPhase === 'revealed' ||
+        nextPhase === 'pack';
+      skipBar.hidden = !canSkip || rewards.length <= 1;
+      revealAllButton.disabled = !canSkip;
+      skipButton.disabled = !canSkip;
     };
 
     const focusControl = control => {
@@ -829,6 +861,23 @@ export async function revealRewardSequence(cards = [], options = {}) {
       focusControl(doneButton);
     };
 
+    /** Presentation-only shortcut — never awards inventory. */
+    const skipToResults = async ({ openPackFirst = false } = {}) => {
+      if (phase === 'results' || phase === 'pack-opening' || phase === 'revealing' || phase === 'returning') {
+        return;
+      }
+      if (openPackFirst && phase === 'pack') {
+        setPhase('pack-opening');
+        packButton.disabled = true;
+        playRevealSound(win, 'pack', activeAudio);
+        packScene.classList.add('is-bursting');
+        await waitForMotion(packScene, win);
+        packScene.classList.remove('is-bursting');
+      }
+      index = rewards.length;
+      showResults();
+    };
+
     const openPack = async () => {
       if (phase !== 'pack') return;
       setPhase('pack-opening');
@@ -900,6 +949,12 @@ export async function revealRewardSequence(cards = [], options = {}) {
     packButton.addEventListener('click', openPack);
     pileButton.addEventListener('click', revealFromPile);
     actor.addEventListener('click', returnToPile);
+    revealAllButton.addEventListener('click', () => {
+      void skipToResults({ openPackFirst: phase === 'pack' });
+    });
+    skipButton.addEventListener('click', () => {
+      void skipToResults({ openPackFirst: phase === 'pack' });
+    });
     doneButton.addEventListener('click', () => close('complete'));
     resultsScene.addEventListener('click', event => {
       if (phase !== 'results' || event.button !== 0) return;

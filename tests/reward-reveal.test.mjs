@@ -186,10 +186,12 @@ test('locks the approved reveal presentation and motion baseline', async () => {
   const stylesheet = await readFile(new URL('../docs/css/reward-reveal.css', import.meta.url), 'utf8');
   const contractHash = createHash('sha256').update(normalizeMotionContract(stylesheet)).digest('hex');
 
-  assert.equal(REVEAL_PRESENTATION_VERSION, '1.5.17');
-  assert.match(stylesheet, /Approved reveal presentation baseline: v1\.5\.17/);
+  assert.equal(REVEAL_PRESENTATION_VERSION, '1.5.18');
+  assert.match(stylesheet, /Approved reveal presentation baseline: v1\.5\.18/);
   assert.equal(contractHash, '15a418208b0fe1d208ab050955c7254722d2e80a884d84a92ac57ef2af6c8377');
   assert.match(stylesheet, /\.st-r3-overlay\.is-embed-anchored/);
+  assert.match(stylesheet, /\.st-r3-skip-bar/);
+  assert.match(stylesheet, /\.st-r3-skip-btn/);
 });
 
 test('keeps the fixed-center reveal lightweight and progressively loads artwork', async () => {
@@ -254,10 +256,27 @@ test('keeps every production reward entry point on the canonical reveal engine',
   ].map(file => readFile(new URL(`../docs/js/pages/${file}`, import.meta.url), 'utf8')));
 
   consumers.forEach(source => {
-    assert.match(source, /reward-reveal\.js\?v=1\.5\.17/);
+    assert.match(source, /reward-reveal\.js\?v=1\.5\.18/);
     assert.match(source, /revealRewardSequence\s*\(/);
     assert.doesNotMatch(source, /@keyframes|stR3CardSpin|stR3PackTop/);
   });
+});
+
+test('offers Reveal All and Skip as presentation-only shortcuts to results', async () => {
+  const script = await readFile(new URL('../docs/js/reward-reveal.js', import.meta.url), 'utf8');
+
+  assert.match(script, /st-r3-skip-bar/);
+  assert.match(script, /Reveal All/);
+  assert.match(script, /Skip to results/);
+  assert.match(
+    script,
+    /\/\*\* Presentation-only shortcut — never awards inventory\. \*\/[\s\S]*const skipToResults = async/
+  );
+  assert.doesNotMatch(script, /skipToResults[\s\S]{0,400}\b(open_daily_booster|grant|insert|upsert|rpc\()/);
+  assert.match(script, /revealAllButton\.addEventListener\('click'[\s\S]*skipToResults/);
+  assert.match(script, /skipButton\.addEventListener\('click'[\s\S]*skipToResults/);
+  assert.match(script, /skipBar\.hidden = !canSkip \|\| rewards\.length <= 1/);
+  assert.match(script, /index = rewards\.length;[\s\S]*showResults\(\)/);
 });
 
 test('restores focus to the control that launched an embedded reveal', async () => {

@@ -3,7 +3,7 @@ import { supabase } from '../supabase-client.js';
 import { getStarBitsExchangePreview } from '../star-bits-service.js';
 import { openStarBitsBoosterById } from '../daily-booster-service.js';
 import { applyAwardedCardsToLocalStore, captureOwnershipEpoch } from '../collection-local-store.js';
-import { revealRewardSequence } from '../reward-reveal.js?v=1.5.17';
+import { revealRewardSequence } from '../reward-reveal.js?v=1.5.18';
 import { getCachedWebsiteContent } from '../website-content-hydrate.js';
 import { maybeCelebrateSeriesCompletions } from '../series-complete-celebration.js?v=1.0.0';
 import { notifyShellEconomyChanged } from '../shell-economy.js';

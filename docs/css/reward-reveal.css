@@ -1,5 +1,5 @@
 /*
- * Approved reveal presentation baseline: v1.5.17.
+ * Approved reveal presentation baseline: v1.5.18.
  * Keep its motion contract intact unless this version and its regression test
  * are intentionally advanced together.
  */
@@ -235,6 +235,42 @@
   text-align: center;
   text-transform: uppercase;
   transform: translateX(-50%);
+}
+.st-r3-skip-bar {
+  position: absolute;
+  z-index: 26;
+  top: max(108px, calc(env(safe-area-inset-top) + 102px));
+  left: 50%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  transform: translateX(-50%);
+}
+.st-r3-skip-btn {
+  min-height: 34px;
+  padding: 7px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(17, 20, 47, 0.82);
+  box-shadow: 0 7px 24px rgba(0, 0, 0, 0.16);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.st-r3-skip-btn:focus-visible {
+  outline: 2px solid #fed334;
+  outline-offset: 2px;
+}
+.st-r3-skip-btn--ghost {
+  background: rgba(255, 255, 255, 0.12);
+}
+.st-r3-skip-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
 }
 .st-r3-stage {
   position: absolute;
