@@ -48,6 +48,9 @@ test('gallery and album pages use rebuilt markup and render hooks', async () => 
   assert.match(collection, /card-album-binder-mount/);
   assert.match(app, /renderAlbumBinderSpread/);
   assert.match(app, /function renderGalleryGridHtml\(/);
+  assert.match(app, /function updateSetProgressMeter\(/);
+  assert.match(app, /data-set-progress/);
+  assert.match(app, /formatSetProgressExplanation/);
 });
 
 test('removes daily-booster promotion from collection page', async () => {

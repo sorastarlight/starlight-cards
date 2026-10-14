@@ -989,6 +989,12 @@ function renderFilterControls() {
     : `<div class="card-filter-heading">
       <div><p class="eyebrow">${esc(eyebrow)}</p><h2>${esc(title)}</h2></div>
       <p data-filter-summary role="status" aria-live="polite">Preparing cards…</p>
+      <div class="card-filter-set-progress" data-set-progress hidden>
+        <div class="card-filter-set-progress-track">
+          <div class="card-filter-set-progress-bar" data-set-progress-bar role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+        </div>
+        <p class="card-filter-set-progress-label" data-set-progress-label></p>
+      </div>
     </div>
     ${fieldsHtml}`;
   host.dataset.filterControlsReady = '1';
@@ -2195,12 +2201,45 @@ function renderGalleryCardLegacy(card, i) {
   </article>`;
 }
 
+function updateSetProgressMeter(browse = {}) {
+  const filters = activeFilters();
+  const series = filters.series || 'All Series';
+  const showMeter = series !== 'All Series'
+    && !String(filters.q || '').trim()
+    && filters.view === 'all'
+    && !filters.favoritesOnly;
+  const owned = Math.max(0, Number(browse.owned) || 0);
+  const total = Math.max(0, Number(browse.poolSize) || 0);
+  const percent = total > 0 ? Math.round((owned / total) * 100) : 0;
+  $$('[data-set-progress]').forEach(wrap => {
+    wrap.hidden = !showMeter || total <= 0;
+    if (wrap.hidden) return;
+    const bar = wrap.querySelector('[data-set-progress-bar]');
+    const label = wrap.querySelector('[data-set-progress-label]');
+    if (bar) {
+      bar.style.width = `${percent}%`;
+      bar.setAttribute('aria-valuenow', String(percent));
+      bar.setAttribute('aria-valuetext', `${owned} of ${total} collected in ${series}`);
+      bar.setAttribute('aria-label', `${series} set progress`);
+    }
+    if (label) {
+      const explain = window.StarlightCardFilters?.formatSetProgressExplanation?.({
+        series,
+        owned,
+        total
+      });
+      label.textContent = explain || `${owned} of ${total} collected in ${series}`;
+    }
+  });
+}
+
 function renderGalleryGridHtml(browse = resolveBinderBrowse()) {
   const list = browse.list || [];
   const poolSize = browse.poolSize || list.length;
   $$('[data-filter-summary]').forEach(element => {
     element.textContent = browse.summary || `Showing ${list.length} of ${poolSize} cards`;
   });
+  updateSetProgressMeter(browse);
   const copy = websiteBinderLanding || websiteSection('binderLanding');
   const emptyTitle = copy.emptyFiltersTitle || 'No cards match these filters';
   const emptyLead = copy.emptyFiltersLead || 'Reset one or more filters to browse again.';
