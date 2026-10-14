@@ -6,45 +6,38 @@ Project: `S:\NewVTuberProject\Stream Assets\Games\StarlightCard Site`
 
 Continue from this Games folder clone of `https://github.com/sorastarlight/starlight-cards.git` on `main`. Live: `https://cards.sorastarlight.net/`. Canonical: `AGENTS.md`.
 
-Active milestone: **V1.0 — Foundation** + collector overhaul roadmap.
+## Live verified (2026-10-14)
 
-## Completed
+| Asset | Live value |
+| --- | --- |
+| `reward-reveal.js` | **1.5.20** (Skip, Sound, prefersReducedMotion) |
+| `daily-booster-page.js` | **1.7.2** |
+| `card-filters.css?v=1.1.2` | set progress meter present |
+| `app.js` | `updateSetProgressMeter` present |
+| `admin-twitch-page.js` | **1.4.2** |
+| Twitch worker `/health` | **1.1.3** ok |
 
-### 1. Reward integrity
-- Opening recovery migration on prod; unlimited mode unchanged.
-- Client UUID recovery live; isolated DB + concurrency PASS.
+Production daily mode still **unlimited**. Opening recovery migration applied earlier.
 
-### 2–3. Shared UX + pack fanfare
-- Home featured sets live.
-- Reveal **v1.5.20**: Reveal All/Skip, sound mute, reduced-motion focus/auto-skip (`8b0b116`).
-- Daily entry `daily-booster-page.js?v=1.7.2` (deploy with latest Pages).
+## Completed this overhaul push
 
-### 4. Collection / progression
-- Set progress text + duplicates exchangeable-copy explanation.
-- Favorites-only filter fix.
-- Binder series **progress meter** (`65628d5`).
-- Star Bits conversion keeps one copy (`greatest(quantity-1,0)`).
-
-### 5. Admin / Twitch
-- Worker **v1.1.3** live: timestamp freshness, revocation status, failed-event resume, `/admin/events/retry`.
-- Admin health: worker version, revoked pill, Retry on failed history.
-
-### Deploy
-- Pages Actions-only; queued concurrency. Worker via Wrangler.
+1. **Reward integrity** — recovery shipped + isolated DB/concurrency.
+2. **Home** — featured sets.
+3. **Reveal fanfare** — Reveal All/Skip, mute, reduced-motion path.
+4. **Collection** — set progress copy + meter, favorites filter fix, duplicate protection messaging; Star Bits keeps one copy.
+5. **Twitch** — timestamp freshness, revocation, failed-event resume + admin Retry.
+6. **Deploy** — Pages Actions-only; cancel stuck deploys when concurrency blocks.
 
 ## Current task
 
-Continue a11y/perf matrix (zoom, contrast, slow network, failed assets, large collections) and remaining binder/grid polish. Authenticated Daily Pack smoke needs QA credentials.
+- Sticky mobile filters (pending commit).
+- Broader a11y/perf matrix still open: zoom/contrast spot-check, slow-network, large-collection stress, authenticated Daily Pack smoke.
+- Deeper Twitch reconciliation dashboards optional.
 
-## Validation
+**Blocked:** QA credentials for authenticated live open/replay.
 
-- Recent commits: `e582162`, `4eee61e`, `230801d`, `a33d14e`, `8b0b116`, `65628d5`.
-- Worker `/health` → `1.1.3`.
-- `npm run check`: 223 pass.
+## Notes
+
+- Rapid pushes cancel *pending* concurrency peers (GitHub behavior); latest successful deploy includes prior file changes.
+- Do not install `starlight_test` on production.
 - Overhaul **not complete**.
-
-## Blocked / watch
-
-- QA credentials for authenticated live open/replay smoke.
-- Pre-migration unlimited openings unrecoverable.
-- No `starlight_test` on production.

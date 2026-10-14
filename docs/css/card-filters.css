@@ -8,6 +8,14 @@
   box-shadow: 0 14px 34px rgba(61, 83, 132, .1);
 }
 
+@media (max-width: 900px) {
+  .card-filter-panel {
+    position: sticky;
+    z-index: 8;
+    top: max(8px, env(safe-area-inset-top));
+  }
+}
+
 .card-filter-heading {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
