@@ -66,6 +66,8 @@ test('shell iframe navigation avoids history-pushing src assignment', async () =
   const shell = await read('docs/js/app-shell.js');
   assert.match(shell, /function setFrameLocation/);
   assert.match(shell, /location\.replace/);
+  assert.match(shell, /about:blank/);
+  assert.match(shell, /frame\.src=absolute/);
   assert.match(shell, /setFrameLocation\(absolute\)/);
   assert.match(shell, /setFrameLocation\('about:blank'\)/);
   assert.doesNotMatch(shell, /if\(frame\)frame\.src='about:blank'/);

@@ -12,8 +12,8 @@ Continue from this Games folder clone of `https://github.com/sorastarlight/starl
 | --- | --- |
 | `reward-reveal.js` | **1.5.21** |
 | `daily-booster-page.js` | **1.7.3** |
-| `app-shell.js` | **1.8.13** (Card Gallery default) |
-| `cloud-collection.js` / `app.js` | **1.4.4** / **1.9.25** |
+| `app-shell.js` | pending **1.8.14** (iframe `src` assign for first embed; Card Gallery default) |
+| `cloud-collection.js` / `app.js` | pending **1.4.5** / **1.9.26** (My Collection series progress) |
 | `card-tile.js` | **1.0.1** — live aria `View uncollected card NNN` |
 | `starlight-perspective-card.js` | **1.0.1** art fallback |
 | `card-filters.css` / `shared-ui.css` | **1.1.5** / **1.6.25** contrast + focus |

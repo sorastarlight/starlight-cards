@@ -9,7 +9,7 @@
 <link href="css/card-filters.css?v=1.1.5" rel="stylesheet"/>
 <link rel="stylesheet" href="css/starlight-public.css?v=1.2.0">
 <link rel="stylesheet" href="css/pages/public-page.css?v=2.1.0">
-<link href="css/pages/card-album-page.css?v=2.11.0" rel="stylesheet"/>
+<link href="css/pages/card-album-page.css?v=2.12.0" rel="stylesheet"/>
 <script src="js/browser-performance.js?v=1.0.0" defer></script>
 <link rel="stylesheet" href="css/shared-ui.css?v=1.6.25">
 <link rel="stylesheet" href="css/qol-ui.css?v=94.2.11">
@@ -49,6 +49,12 @@
 </div>
 </header>
 
+<section class="card-album-series-progress panel" aria-labelledby="collectionSeriesProgressTitle">
+<h2 id="collectionSeriesProgressTitle" class="card-album-series-progress-title">Series Progress</h2>
+<p class="card-album-series-progress-lead">Unique cards collected per set. Extra copies do not increase progress.</p>
+<div id="collectionSeriesProgress" class="card-album-series-progress-list"></div>
+</section>
+
 <div class="st-public-body">
 <nav class="st-tabstrip card-album-tabs" aria-label="Collection views">
 <button class="card-album-tab active" data-collection-tab="all" type="button" data-content="collection.tabAll">Collected Cards</button>
@@ -79,7 +85,7 @@
 <div class="card-album-duplicates-banner panel">
 <div>
 <h2 data-content="collection.duplicatesTitle">Duplicate Cards</h2>
-<p data-content="collection.duplicatesLead">You have <strong data-duplicates="">0</strong> extra copies. Your last copy of each card is always protected.</p>
+<p data-content="collection.duplicatesLead">You have <strong data-duplicates="">0</strong> extra copies. Each unique card keeps <strong>1 protected</strong> copy in your collection; only extras can be exchanged for Star Bits.</p>
 </div>
 <a class="btn primary" data-shell-view="star-bits" href="binder?view=star-bits"><img class="star-bit-icon star-bit-icon--sm" src="site_assets/icons/star-bit.png?v=2" alt="" width="16" height="16" decoding="async"> <span data-content="collection.duplicatesCta">Open Star Bits</span></a>
 </div>
@@ -95,7 +101,7 @@
 </div>
 <div aria-hidden="true" aria-live="polite" id="cardOverlay" hidden></div>
 <script type="module" src="js/pages/website-content-hydrate-page.js?v=1.2"></script>
-<script src="js/cloud-collection.js?v=1.4.4" type="module"></script>
+<script src="js/cloud-collection.js?v=1.4.5" type="module"></script>
 <script src="js/site-dashboard.js" type="module"></script>
 <script src="js/pages/collection-page.js?v=1.0"></script>
 <script src="js/collection-redesign.js?v=1.4.0" type="module"></script>

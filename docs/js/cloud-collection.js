@@ -659,7 +659,7 @@ async function loadBinderApplication() {
                     "load",
                     () => {
                         const script = document.createElement("script");
-                        script.src = "./js/app.js?v=1.9.25";
+                        script.src = "./js/app.js?v=1.9.26";
                         script.async = false;
                         script.dataset.starlightApp = "true";
 

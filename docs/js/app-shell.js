@@ -338,6 +338,18 @@ function getFrameLocation(){
 function setFrameLocation(url){
   if(!frame)return;
   const absolute=new URL(url,location.href).href;
+  let current='';
+  try{
+    current=frame.contentWindow?.location?.href||'';
+  }catch{
+    current='';
+  }
+  // Fresh iframes often expose contentWindow on about:blank, but location.replace
+  // can no-op or race before the first real document is assigned. Prefer src then.
+  if(!current || current==='about:blank' || current.startsWith('about:')){
+    frame.src=absolute;
+    return;
+  }
   try{
     if(frame.contentWindow){
       frame.contentWindow.location.replace(absolute);

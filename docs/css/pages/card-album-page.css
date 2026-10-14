@@ -127,6 +127,83 @@
   background: linear-gradient(90deg, rgba(107, 198, 248, 0.95), rgba(255, 130, 200, 0.88));
 }
 
+.card-album-series-progress {
+  margin: 0 0 16px;
+  padding: 16px 18px;
+}
+
+.card-album-series-progress-title {
+  margin: 0 0 4px;
+  color: #405fa1;
+  font-size: 1.05rem;
+}
+
+.card-album-series-progress-lead,
+.card-album-series-progress-empty {
+  margin: 0 0 12px;
+  color: #6b7089;
+  font-size: 0.86rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.card-album-series-progress-list {
+  display: grid;
+  gap: 12px;
+}
+
+.card-album-series-progress-item {
+  display: grid;
+  gap: 6px;
+}
+
+.card-album-series-progress-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: #405fa1;
+  font-size: 0.9rem;
+  font-weight: 850;
+}
+
+.card-album-series-progress-track {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(107, 198, 248, 0.16);
+}
+
+.card-album-series-progress-bar {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgba(107, 198, 248, 0.95), rgba(255, 130, 200, 0.88));
+}
+
+.card-album-series-progress-explain {
+  margin: 0;
+  color: #52679b;
+  font-size: 0.78rem;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+@media (prefers-contrast: more) {
+  .card-album-series-progress-lead,
+  .card-album-series-progress-explain {
+    color: #24345c;
+  }
+
+  .card-album-series-progress-track {
+    border: 1px solid #34466f;
+    background: #fff;
+  }
+
+  .card-album-series-progress-bar {
+    background: #405fa1;
+  }
+}
+
 .card-album-tabs {
   display: flex;
   gap: 8px;

@@ -1179,6 +1179,21 @@ function toggleFavorite(id) {
   }
   return result.isFavorite;
 }
+function buildSeriesProgressRows() {
+  const groups = [...new Set(cards.map(c => c.series).filter(Boolean))];
+  return groups.map(series => {
+    const list = cards.filter(c => c.series === series);
+    const count = list.filter(c => isCollected(c.id)).length;
+    const pct = percent(count, list.length);
+    const explain = window.StarlightCardFilters?.formatSetProgressExplanation?.({
+      series,
+      owned: count,
+      total: list.length
+    }) || `${count} of ${list.length} unique cards in ${series}`;
+    return { series, count, total: list.length, pct, explain };
+  });
+}
+
 function renderShell() {
   const total = cards.length;
   const got = cards.filter(c => isCollected(c.id)).length;
@@ -1187,14 +1202,29 @@ function renderShell() {
   $$('[data-collected]').forEach(e => e.textContent = got);
   $$('[data-percent]').forEach(e => e.textContent = `${p}%`);
   $$('[data-progress]').forEach(e => e.style.width = `${p}%`);
+  const seriesRows = buildSeriesProgressRows();
   const mini = $('#miniSeries');
   if (mini) {
-    const groups = [...new Set(cards.map(c => c.series))];
-    mini.innerHTML = groups.map(series => {
-      const list = cards.filter(c => c.series === series);
-      const count = list.filter(c => isCollected(c.id)).length;
-      return `<div class="mini-row"><b><span>${esc(series)}</span><span>${count} / ${list.length}</span></b><div class="bar"><span style="width:${percent(count, list.length)}%"></span></div></div>`;
+    mini.innerHTML = seriesRows.map(({ series, count, total: seriesTotal, pct }) => {
+      return `<div class="mini-row"><b><span>${esc(series)}</span><span>${count} / ${seriesTotal}</span></b><div class="bar"><span style="width:${pct}%"></span></div></div>`;
     }).join("");
+  }
+  const collectionSeries = $('#collectionSeriesProgress');
+  if (collectionSeries) {
+    collectionSeries.innerHTML = seriesRows.length
+      ? seriesRows.map(({ series, count, total: seriesTotal, pct, explain }) => `
+      <article class="card-album-series-progress-item">
+        <div class="card-album-series-progress-head">
+          <strong>${esc(series)}</strong>
+          <span>${count} / ${seriesTotal}</span>
+        </div>
+        <div class="card-album-series-progress-track" aria-hidden="true">
+          <span class="card-album-series-progress-bar" style="width:${pct}%"></span>
+        </div>
+        <p class="card-album-series-progress-explain">${esc(explain)}</p>
+        <div class="sr-only" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-valuetext="${esc(explain)}"></div>
+      </article>`).join('')
+      : '<p class="card-album-series-progress-empty">Series progress will appear once the catalog loads.</p>';
   }
   const ownedCards = cards.filter(card => isCollected(card.id));
   const rarityCounts = ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary'].map(rarity => ({
