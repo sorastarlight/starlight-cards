@@ -8,58 +8,57 @@ Continue this existing project from this Games folder path (same pattern as Poke
 
 Canonical guidance: `AGENTS.md`. Active milestone: **V1.0 — Foundation**, plus the collector overhaul roadmap (reward integrity → shared UX → reveal fanfare → collection → admin/Twitch → a11y/perf).
 
-## Completed
+## Completed (this session)
 
-### Reward integrity — opening recovery
-- Migration `20261014080000` **on production**; mode still **unlimited**.
-- Client recovery `df258b2`. Isolated DB + two-session concurrency PASS.
-- Docs: `docs/DAILY_OPENING_RECOVERY.md`.
+### Reward integrity
+- Opening recovery migration + client live; mode **unlimited** unchanged.
+- Isolated DB suite + concurrency PASS earlier.
 
-### Shared experience — home featured sets
-- `8c66c6b` live.
+### Shared UX / home
+- Featured sets live.
 
-### Pack opening fanfare
-- Reveal `v1.5.19` live: Reveal All/Skip + Sound mute (`c555138`, `b3b8695`).
-- Entry cache-busts: `daily-booster-page.js?v=1.7.1` **live verified**.
+### Pack opening
+- Reveal **v1.5.19** live: Reveal All/Skip + Sound mute.
+- `daily-booster-page.js?v=1.7.1` live.
 
-### Collection / progression
-- Set “X of Y collected” summaries + duplicates exchangeable-copy copy (`e582162`) **live**.
-- Favorites-only filter bugfix (`isFavorite` passed into shared filters).
-- Economy audit: `convert_selected_duplicates_to_star_bits` uses `greatest(quantity - 1, 0)` — one copy always protected. No odds/monetization changes.
+### Collection
+- Set progress summaries + duplicates exchangeable-copy explanation live.
+- Favorites-only filter fixed (`isFavorite` wiring).
+- Star Bits conversion audited: `greatest(quantity - 1, 0)` keeps one copy.
 
-### Twitch worker hardening
-- Worker **v1.1.2 deployed** to Cloudflare (`starlight-twitch-integration`): ±10m timestamp check, signature helper, revocation → `twitch_integration_config.eventsub_status`.
-- Health: `https://starlight-twitch-integration.fetkun.workers.dev/health` → `ok`, `1.1.2`.
-- Admin Twitch pills: show worker version + “Revoked / Sync again” (pending Pages).
+### Twitch
+- Worker **v1.1.3 live** (`/health` ok): timestamp freshness, revocation status, failed-event resume on redelivery, `/admin/events/retry`.
+- Admin pills: worker version + Revoked label + Retry on failed history (`a33d14e`).
 
-### Deploy hygiene
-- Pages `build_type=workflow`; concurrency queues deploys.
+### Deploy
+- Pages Actions-only; deploy queueing. Worker via Wrangler.
 
 ## Current task
 
-Continue a11y/perf (keyboard/zoom/slow-network spot checks), Twitch durable retry/reconciliation if gaps remain, binder/grid usability polish. Authenticated Daily Pack smoke still needs QA credentials.
+Continue **a11y/perf matrix** (keyboard, zoom, reduced-motion spot checks, slow network / failed assets, large collections) and remaining binder/grid usability. Twitch reconciliation dashboards can deepen later.
+
+**Blocked:** authenticated Daily Pack open/replay smoke needs QA account credentials.
 
 ## Validation evidence
 
-- Commits: `df258b2`, `8c66c6b`, `c555138`, `b3b8695`, `e582162`, `4eee61e` (+ pending admin Twitch UI).
-- Live: reveal `1.5.19`, daily page `1.7.1`, card-filter `formatSetProgressExplanation`.
-- Worker live `1.1.2`.
-- `npm run check`: 222 pass (pre-admin-UI commit).
-- Production daily mode unchanged.
+- Commits on `main` include `e582162`, `4eee61e`, `230801d`, `a33d14e`.
+- Live site: reveal `1.5.19`, daily `1.7.1`, set-progress helpers.
+- Worker health: `version":"1.1.3"`.
+- `npm run check` was green (222+) before final Twitch retry commit; targeted tests PASS after.
 
 ## Unresolved / watch
 
-- Authenticated live Daily Pack smoke blocked without QA account credentials.
-- Historical unlimited openings before migration still unrecoverable.
+- QA credentials for authenticated live smoke.
+- Historical unlimited openings pre-migration unrecoverable.
 - Do not install `starlight_test` on production.
-- Overhaul **not complete**: remaining binder UX polish, Twitch retry/reconciliation depth, full a11y/perf matrix.
+- Overhaul **not complete** while a11y/perf + deeper binder polish remain.
 
 ## Repository map
 
 | Path | Role |
 | --- | --- |
-| `docs/` | Production website / GitHub Pages root |
-| `docs/js/reward-reveal.js` | Canonical pack/reveal presentation engine |
-| `cloudflare-worker/` | Twitch EventSub / OAuth worker |
-| `supabase/migrations/` | Forward-only schema/policy migrations |
-| `scripts/`, `tests/` | Validation harness + isolated SQL suites |
+| `docs/` | GitHub Pages site root |
+| `docs/js/reward-reveal.js` | Canonical reveal engine |
+| `cloudflare-worker/` | Twitch EventSub worker |
+| `supabase/migrations/` | Forward-only migrations |
+| `scripts/`, `tests/` | Validation harness |
