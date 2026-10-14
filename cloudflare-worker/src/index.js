@@ -676,6 +676,17 @@ async function processEvent(env, payload, eventId, eventType) {
 
   // Season Pass unlocks work for linked and unlinked Twitch viewers.
   if (rule.reward_type === 'season_pass_unlock') {
+    const priorSeasonGrant = await sb(
+      env,
+      `/rest/v1/twitch_reward_grants?event_id=eq.${encodeURIComponent(eventId)}&select=id&limit=1`
+    );
+    if (priorSeasonGrant?.length) {
+      await sb(env, `/rest/v1/twitch_reward_events?event_id=eq.${encodeURIComponent(eventId)}`, {
+        method: 'PATCH',
+        body: { status: 'delivered', processed_at: new Date().toISOString(), error_message: null }
+      });
+      return;
+    }
     if (connection) {
       const existingSeason = await sb(
         env,
@@ -735,6 +746,21 @@ async function processEvent(env, payload, eventId, eventType) {
         error_message: 'No linked Starlight account.',
         processed_at: new Date().toISOString()
       }
+    });
+    return;
+  }
+
+  // Crash between grant commit and event status update leaves status failed/received
+  // while a grant row already exists. Finish delivery without counting that row as a
+  // new claim or invoking apply again.
+  const priorByEvent = await sb(
+    env,
+    `/rest/v1/twitch_reward_grants?event_id=eq.${encodeURIComponent(eventId)}&select=id&limit=1`
+  );
+  if (priorByEvent?.length) {
+    await sb(env, `/rest/v1/twitch_reward_events?event_id=eq.${encodeURIComponent(eventId)}`, {
+      method: 'PATCH',
+      body: { status: 'delivered', processed_at: new Date().toISOString(), error_message: null }
     });
     return;
   }
@@ -913,7 +939,7 @@ export default {
         return json({
           ok: missing.length === 0,
           service: 'starlight-twitch-worker',
-          version: '1.1.3',
+          version: '1.1.4',
           missingConfig: missing
         }, missing.length ? 503 : 200);
       }
