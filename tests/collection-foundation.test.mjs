@@ -51,6 +51,8 @@ test('gallery and album pages use rebuilt markup and render hooks', async () => 
   assert.match(app, /function updateSetProgressMeter\(/);
   assert.match(app, /data-set-progress/);
   assert.match(app, /formatSetProgressExplanation/);
+  assert.match(app, /card-filter-binder-summary/);
+  assert.match(app, /isBinder\s*\?[\s\S]*data-set-progress[\s\S]*fieldsHtml/);
 });
 
 test('removes daily-booster promotion from collection page', async () => {

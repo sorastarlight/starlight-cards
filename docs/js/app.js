@@ -984,17 +984,18 @@ function renderFilterControls() {
       ${isBinder ? `<label class="card-filter-favorites"><span>Favorites</span><span class="card-filter-favorites-control"><input class="qol-no-enhance" type="checkbox" data-filter-favorites value="1"><span>Favorites only</span></span></label>` : ''}
       <button class="card-filter-reset" type="button" data-reset-card-filters>${esc(resetLabel)}</button>
     </div>`;
-  host.innerHTML = isBinder
-    ? fieldsHtml
-    : `<div class="card-filter-heading">
-      <div><p class="eyebrow">${esc(eyebrow)}</p><h2>${esc(title)}</h2></div>
-      <p data-filter-summary role="status" aria-live="polite">Preparing cards…</p>
-      <div class="card-filter-set-progress" data-set-progress hidden>
+  const setProgressHtml = `<div class="card-filter-set-progress" data-set-progress hidden>
         <div class="card-filter-set-progress-track">
           <div class="card-filter-set-progress-bar" data-set-progress-bar role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
         </div>
         <p class="card-filter-set-progress-label" data-set-progress-label></p>
-      </div>
+      </div>`;
+  host.innerHTML = isBinder
+    ? `<p class="card-filter-binder-summary" data-filter-summary role="status" aria-live="polite">Preparing cards…</p>${setProgressHtml}${fieldsHtml}`
+    : `<div class="card-filter-heading">
+      <div><p class="eyebrow">${esc(eyebrow)}</p><h2>${esc(title)}</h2></div>
+      <p data-filter-summary role="status" aria-live="polite">Preparing cards…</p>
+      ${setProgressHtml}
     </div>
     ${fieldsHtml}`;
   host.dataset.filterControlsReady = '1';
