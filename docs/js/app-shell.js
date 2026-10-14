@@ -920,9 +920,15 @@ document.addEventListener('click',e=>{
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape')closeAccountMenu();
 });
+function defaultShellView(){
+  const path=(location.pathname.split('/').pop()||'').replace(/\.html$/i,'').toLowerCase();
+  if(path==='binder')return 'binder';
+  return 'home';
+}
+
 window.addEventListener('popstate',()=>{
   const params=new URLSearchParams(location.search);
-  const view=aliasShellRoute(params.get('view')||'home')||'home';
+  const view=aliasShellRoute(params.get('view')||defaultShellView())||defaultShellView();
   const extra=locationExtraParams();
   const routeSrc=routes[view]?.src||null;
   // Wait until iframe session history catches the parent entry. Navigating too
@@ -1028,7 +1034,7 @@ window.addEventListener('pageshow',event=>{
   if(event.persisted && currentRoute!=='binder')loadEmbeddedView(currentRoute,{force:true,resetRetry:true});
 });
 
-const initial=aliasShellRoute(new URLSearchParams(location.search).get('view')||'home')||'home';
+const initial=aliasShellRoute(new URLSearchParams(location.search).get('view')||defaultShellView())||defaultShellView();
 
 liveFeedWidget = initLiveFeedWidget({
   onOpenFullFeed() {

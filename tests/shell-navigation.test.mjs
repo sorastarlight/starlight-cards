@@ -731,3 +731,10 @@ test('shell refreshes account chrome after embedded login', async () => {
   assert.match(shell, /previousRoute==='login'[\s\S]*scheduleHydrateAccount/);
   assert.match(loginPage, /starlight-auth-changed[\s\S]*access_token/);
 });
+
+test('binder.html defaults the shell to the Card Gallery view', async () => {
+  const shell = await read('docs/js/app-shell.js');
+  assert.match(shell, /function defaultShellView\(\)/);
+  assert.match(shell, /if\(path==='binder'\)return 'binder'/);
+  assert.match(shell, /get\('view'\)\|\|defaultShellView\(\)/);
+});
