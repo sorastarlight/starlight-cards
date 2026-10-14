@@ -36,7 +36,8 @@ Production daily mode still **unlimited**. Opening recovery migration applied ea
 
 ## Notes
 
-- `binder.html` without `?view=` defaults shell to **home**; use `binder.html?view=binder` for Card Gallery.
+- `binder.html` now defaults to Card Gallery (`a819668`); `?view=` still overrides.
+- Uncollected gallery cards keep ??? visuals but announce collector numbers to AT.
 - Pages `Deploy to GitHub Pages` can take several minutes; do not mark in-flight deployments inactive.
 - Do not install `starlight_test` on production.
 - Overhaul **not complete**.
