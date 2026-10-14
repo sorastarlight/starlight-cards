@@ -207,9 +207,11 @@ test('shell wires handshake helpers, timeout error recovery, and keeps productio
   assert.match(shell, /markViewReady\(data, e\)/);
   assert.match(shell, /restoredSameRoute/);
   assert.match(shell, /starlight-shell-request-ready/);
+  assert.match(shell, /starlight-embedded/);
+  assert.match(shell, /setTimeout\(\(\)=>\{\s*navigate\(view/);
   assert.match(shell, /daily:\{title:'Free Daily Starlight Pack',src:'daily-booster\.html'\}/);
   assert.match(shell, /login:\{title:'Sign In',src:'login'\}/);
-  assert.match(binder, /app-shell\.js\?v=1\.8\.9/);
+  assert.match(binder, /app-shell\.js\?v=1\.8\.10/);
 
   assert.match(readiness, /shouldAcceptEmbeddedHandshake/);
   assert.match(readiness, /frameHrefMatchesRouteSrc/);

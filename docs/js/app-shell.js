@@ -27,7 +27,7 @@ import {
   shouldReenterLoadingOnFrameLoad
 } from './shell-view-readiness.js';
 
-const SHELL_BUILD = '94.5.4';
+const SHELL_BUILD = '94.5.5';
 const VIEW_READY_TIMEOUT_MS = 6500;
 const MAX_VIEW_RETRIES = 1;
 const SFX_KEY = 'sora-starlight-card-binder-v7-sfx';
@@ -275,6 +275,22 @@ function loadEmbeddedView(route,{force=false,resetRetry=false}={}){
     frame.dataset.route=route;
     armReadyTimeout(route,currentLoadToken);
     requestEmbeddedReady();
+    // Cached embeds may not listen for request-ready; finish immediately when the
+    // restored document is already in embedded mode.
+    try{
+      const child=frame.contentDocument;
+      if(child?.documentElement?.classList?.contains('starlight-embedded')){
+        const height=Math.max(
+          child.documentElement?.scrollHeight||0,
+          child.body?.scrollHeight||0,
+          720
+        );
+        markViewReady(
+          { view: route, loadToken: currentLoadToken, height },
+          { origin: location.origin, source: frame.contentWindow }
+        );
+      }
+    }catch{ /* ignore */ }
     return;
   }
 
@@ -887,7 +903,13 @@ document.addEventListener('keydown',e=>{
 });
 window.addEventListener('popstate',()=>{
   const params=new URLSearchParams(location.search);
-  navigate(params.get('view')||'home',{push:false,extra:locationExtraParams()});
+  const view=params.get('view')||'home';
+  const extra=locationExtraParams();
+  // Defer so iframe session history can settle with the parent entry before we
+  // decide whether to adopt the restored document or navigate fresh.
+  window.setTimeout(()=>{
+    navigate(view,{push:false,extra});
+  },0);
 });
 window.addEventListener('message',async e=>{
   if(e.origin!==location.origin)return;
