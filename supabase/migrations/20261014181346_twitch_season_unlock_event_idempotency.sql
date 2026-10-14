@@ -117,5 +117,5 @@ begin
 end;
 $function$;
 
-revoke all on function public.deliver_twitch_season_unlock_v1(text, text, text, uuid, text) from public, anon;
-grant execute on function public.deliver_twitch_season_unlock_v1(text, text, text, uuid, text) to authenticated, service_role;
+revoke all on function public.deliver_twitch_season_unlock_v1(text, text, text, uuid, text) from public, anon, authenticated;
+grant execute on function public.deliver_twitch_season_unlock_v1(text, text, text, uuid, text) to service_role;

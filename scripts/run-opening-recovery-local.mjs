@@ -48,7 +48,10 @@ run([
    DO $$ BEGIN CREATE ROLE service_role NOLOGIN; EXCEPTION WHEN duplicate_object THEN NULL; END $$;`
 ]);
 run(sqlFile('tests/sql/opening-recovery-local-fixture.sql'));
-run(sqlFile('supabase/migrations/20261014080000_daily_booster_opening_recovery.sql'));
+// Production apply order (three migrations), not the historical monolith placeholder.
+run(sqlFile('supabase/migrations/20261014152518_daily_booster_opening_recovery.sql'));
+run(sqlFile('supabase/migrations/20261014152704_daily_booster_opening_recovery_rpcs_helpers.sql'));
+run(sqlFile('supabase/migrations/20261014152749_daily_booster_opening_recovery_open_rpcs.sql'));
 run(sqlFile('tests/sql/daily-booster-opening-recovery.sql'));
 const suite = run([
   '-U', user, '-h', host, '-d', db, '-v', 'ON_ERROR_STOP=1', '-c',

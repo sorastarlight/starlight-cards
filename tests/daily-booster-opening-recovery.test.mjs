@@ -231,10 +231,28 @@ test('normalizeOpeningPayload rejects empty foreign-looking payloads', () => {
 });
 
 test('migration SQL enforces owner request uniqueness, daily partial unique, and anon revoke', async () => {
-  const sql = await readFile(
-    new URL('../supabase/migrations/20261014080000_daily_booster_opening_recovery.sql', import.meta.url),
-    'utf8'
-  );
+  // Production apply order: three split migrations (monolith 20261014080000 is a no-op pointer).
+  const parts = await Promise.all([
+    readFile(
+      new URL('../supabase/migrations/20261014152518_daily_booster_opening_recovery.sql', import.meta.url),
+      'utf8'
+    ),
+    readFile(
+      new URL(
+        '../supabase/migrations/20261014152704_daily_booster_opening_recovery_rpcs_helpers.sql',
+        import.meta.url
+      ),
+      'utf8'
+    ),
+    readFile(
+      new URL(
+        '../supabase/migrations/20261014152749_daily_booster_opening_recovery_open_rpcs.sql',
+        import.meta.url
+      ),
+      'utf8'
+    )
+  ]);
+  const sql = parts.join('\n');
   assert.match(sql, /daily_booster_claims_one_daily_per_day/);
   assert.match(sql, /daily_booster_claims_user_request_id/);
   assert.match(sql, /where mode = 'daily'/);
