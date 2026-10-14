@@ -1,5 +1,5 @@
 /*
- * Approved reveal presentation baseline: v1.5.21.
+ * Approved reveal presentation baseline: v1.5.22.
  * Keep its motion contract intact unless this version and its regression test
  * are intentionally advanced together.
  */
@@ -232,6 +232,7 @@
 .st-r3-pack-button:focus-visible,
 .st-r3-pile-button:focus-visible,
 .st-r3-card-actor:focus-visible,
+.st-r3-collection:focus-visible,
 .st-r3-done:focus-visible {
   outline: 3px solid #fff;
   outline-offset: 5px;
@@ -1259,11 +1260,24 @@
   margin-top: 8px;
 }
 
+.st-r3-results-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 24px auto 0;
+  animation: stR3ResultsDoneEnter 520ms 260ms cubic-bezier(.16, .84, .24, 1) both;
+}
+
+.st-r3-collection,
 .st-r3-done {
-  display: block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-width: 150px;
   min-height: 46px;
-  margin: 24px auto 0;
+  margin: 0;
   padding: 11px 24px;
   border: 1px solid rgba(255, 255, 255, 0.38);
   border-radius: 999px;
@@ -1272,7 +1286,12 @@
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.26);
   font: 900 0.86rem/1 system-ui, sans-serif;
   cursor: pointer;
-  animation: stR3ResultsDoneEnter 520ms 260ms cubic-bezier(.16, .84, .24, 1) both;
+}
+
+.st-r3-collection {
+  color: #fff;
+  border-color: rgba(255, 214, 240, 0.55);
+  background: linear-gradient(135deg, #7b4fb8, #d45b9c);
 }
 
 @media (hover: hover) {

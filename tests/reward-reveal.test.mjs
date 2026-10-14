@@ -106,10 +106,14 @@ test('normalizes reveal option aliases and supplies the canonical card back', ()
     packImageUrl: '/packs/daily.png',
     cardBackUrl: '/cards/back.png',
     autoOpen: false,
-    presentationMode: 'claim'
+    presentationMode: 'claim',
+    showCollectionCta: true,
+    collectionView: 'collection',
+    onViewCollection: null
   });
 
   assert.equal(normalizeRevealOptions({ presentationMode: 'replay' }).presentationMode, 'replay');
+  assert.equal(normalizeRevealOptions({ showCollectionCta: false }).showCollectionCta, false);
   assert.match(normalizeRevealOptions({}).cardBackUrl, /StarlightCard_Back_NewLogo\.png$/);
 });
 
@@ -188,12 +192,14 @@ test('locks the approved reveal presentation and motion baseline', async () => {
   const stylesheet = await readFile(new URL('../docs/css/reward-reveal.css', import.meta.url), 'utf8');
   const contractHash = createHash('sha256').update(normalizeMotionContract(stylesheet)).digest('hex');
 
-  assert.equal(REVEAL_PRESENTATION_VERSION, '1.5.21');
-  assert.match(stylesheet, /Approved reveal presentation baseline: v1\.5\.21/);
-  assert.equal(contractHash, '15a418208b0fe1d208ab050955c7254722d2e80a884d84a92ac57ef2af6c8377');
+  assert.equal(REVEAL_PRESENTATION_VERSION, '1.5.22');
+  assert.match(stylesheet, /Approved reveal presentation baseline: v1\.5\.22/);
+  assert.equal(contractHash, '44882aa4bf9bac683ed16e54958b45a128d39ac525cc314535ed601078c16597');
   assert.match(stylesheet, /\.st-r3-overlay\.is-embed-anchored/);
   assert.match(stylesheet, /\.st-r3-skip-bar/);
   assert.match(stylesheet, /\.st-r3-skip-btn/);
+  assert.match(stylesheet, /\.st-r3-results-actions/);
+  assert.match(stylesheet, /\.st-r3-collection/);
 });
 
 test('keeps the fixed-center reveal lightweight and progressively loads artwork', async () => {
@@ -212,7 +218,9 @@ test('keeps the fixed-center reveal lightweight and progressively loads artwork'
   assert.match(script, /setProperty\('overflow-x', 'hidden', 'important'\)/);
   assert.match(script, /releaseViewportLock\(\)/);
   assert.match(script, /showPile\(\{ fromPack: true \}\)/);
-  assert.match(script, /resultsScene\.addEventListener\('click'[\s\S]*event\.target\.closest\('\.st-r3-result-card, \.st-r3-results-heading, \.st-r3-done'\)[\s\S]*close\('results-backdrop'\)/);
+  assert.match(script, /resultsScene\.addEventListener\('click'[\s\S]*event\.target\.closest\('\.st-r3-result-card, \.st-r3-results-heading, \.st-r3-results-actions, \.st-r3-done, \.st-r3-collection'\)[\s\S]*close\('results-backdrop'\)/);
+  assert.match(script, /navigateToCollectionView/);
+  assert.match(script, /close\('view-collection'\)/);
   assert.match(script, /computedMotionDuration\(element, win\)/);
   assert.match(script, /waitForFrames\(win, computedMotionDuration/);
   assert.match(stylesheet, /\.st-r3-overlay[\s\S]*position: fixed !important;/);
@@ -258,7 +266,7 @@ test('keeps every production reward entry point on the canonical reveal engine',
   ].map(file => readFile(new URL(`../docs/js/pages/${file}`, import.meta.url), 'utf8')));
 
   consumers.forEach(source => {
-    assert.match(source, /reward-reveal\.js\?v=1\.5\.21/);
+    assert.match(source, /reward-reveal\.js\?v=1\.5\.22/);
     assert.match(source, /revealRewardSequence\s*\(/);
     assert.doesNotMatch(source, /@keyframes|stR3CardSpin|stR3PackTop/);
   });

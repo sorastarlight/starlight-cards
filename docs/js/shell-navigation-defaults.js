@@ -176,7 +176,6 @@ export function createDefaultShellNavigation() {
           mega: true,
           items: [
             { id: 'binder', label: 'Card Gallery', icon: shellNavIcon('gallery'), destination: 'binder', enabled: true, features: ['clearSeries', 'clearCardSet'] },
-            { id: 'card-series', label: 'Card Series', icon: shellNavIcon('cards'), destination: 'binder', enabled: true, features: ['clearSeries', 'clearCardSet'] },
             { id: 'event-cards', label: 'Event Cards', icon: shellNavIcon('events'), destination: 'binder', enabled: true, features: ['eventCards', 'clearSeries'] },
             { id: 'special-cards', label: 'Special Cards', icon: shellNavIcon('season-pass'), destination: 'binder', enabled: true, features: ['specialCards', 'clearSeries'] }
           ]
@@ -237,14 +236,16 @@ export function createDefaultShellNavigation() {
     topBar: {
       quickLinks: [
         { id: 'home-top', label: 'Home', destination: 'home', enabled: true, features: [] },
-        { id: 'daily-top', label: 'Free Daily Card Pack', destination: 'daily', enabled: true, features: ['dailyBadge'], className: 'shell-daily-top-link' }
+        { id: 'daily-top', label: 'Free Daily Card Pack', destination: 'daily', enabled: true, features: ['dailyBadge'], className: 'shell-daily-top-link' },
+        { id: 'collection-top', label: 'My Binder', destination: 'collection', enabled: true, features: [] }
       ]
     },
     accountMenu: {
       signedIn: [
         { id: 'view-profile', label: 'View My Profile', destination: 'collector', enabled: true, features: ['profileLink'] },
         { id: 'profile-settings', label: 'Profile Settings', destination: 'profile', enabled: true, features: [] },
-        { id: 'notifications', label: 'Notifications', destination: 'notifications', enabled: true, features: ['notificationBadge'] }
+        { id: 'notifications', label: 'Notifications', destination: 'notifications', enabled: true, features: ['notificationBadge'] },
+        { id: 'sign-out', label: 'Sign Out', destination: '', enabled: true, features: ['signOut'] }
       ],
       signedOut: [
         { id: 'sign-in', label: 'Sign In', destination: '', enabled: true, features: ['signIn'] },

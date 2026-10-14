@@ -1,5 +1,5 @@
 import { getReceivedRewards, claimReceivedReward, dismissReceivedReward } from '../received-rewards-service.js';
-import { revealRewardSequence } from '../reward-reveal.js?v=1.5.21';
+import { revealRewardSequence } from '../reward-reveal.js?v=1.5.22';
 import { getCachedWebsiteContent } from '../website-content-hydrate.js';
 import { maybeCelebrateSeriesCompletions } from '../series-complete-celebration.js?v=1.0.0';
 import { notifyShellEconomyChanged } from '../shell-economy.js';

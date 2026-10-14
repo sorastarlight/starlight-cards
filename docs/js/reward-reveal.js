@@ -143,13 +143,43 @@ export function normalizeRevealOptions(options = {}) {
   )
     .trim()
     .toLowerCase();
+  const showCollectionCta = options.showCollectionCta ?? options.show_collection_cta;
   return {
     title: options.title || options.boosterName || options.booster_name || '',
     packImageUrl: options.packImageUrl || options.pack_image_url || '',
     cardBackUrl: options.cardBackUrl || options.card_back_url || DEFAULT_BACK,
     autoOpen: Boolean(options.autoOpen ?? options.auto_open),
-    presentationMode: presentationMode === 'replay' ? 'replay' : 'claim'
+    presentationMode: presentationMode === 'replay' ? 'replay' : 'claim',
+    // Default on: pack opening should lead back into the collector journey.
+    showCollectionCta: showCollectionCta === undefined ? true : Boolean(showCollectionCta),
+    collectionView: String(options.collectionView || options.collection_view || 'collection').trim() || 'collection',
+    onViewCollection: typeof options.onViewCollection === 'function'
+      ? options.onViewCollection
+      : typeof options.on_view_collection === 'function'
+        ? options.on_view_collection
+        : null
   };
+}
+
+/** Navigate into My Collection after reveal via the shell message bus. */
+export function navigateToCollectionView(view = 'collection', hostWindow = window) {
+  const route = String(view || 'collection').trim() || 'collection';
+  try {
+    const shell = hostWindow?.top
+      && hostWindow.top.location.origin === hostWindow.location.origin
+      ? hostWindow.top
+      : hostWindow;
+    shell.postMessage(
+      { type: 'starlight-navigate', view: route, params: {} },
+      shell.location.origin
+    );
+  } catch (_) {
+    try {
+      hostWindow.location.assign(`binder?view=${encodeURIComponent(route)}`);
+    } catch {
+      // Navigation is best-effort after reveal close.
+    }
+  }
 }
 
 export function createRevealStackLayout(cardCount) {
@@ -247,7 +277,7 @@ function acquireRevealViewportLock(doc) {
   };
 }
 
-export const REVEAL_PRESENTATION_VERSION = '1.5.21';
+export const REVEAL_PRESENTATION_VERSION = '1.5.22';
 
 const REVEAL_STYLESHEET_ID = `starlight-reveal-v${REVEAL_PRESENTATION_VERSION.replace(/\./g, '')}`;
 const REVEAL_STYLESHEET_URL = new URL(
@@ -531,6 +561,7 @@ export async function revealRewardSequence(cards = [], options = {}) {
     let index = 0;
     let phase = 'pack';
     let settled = false;
+    let closeReason = 'dismiss';
     let controller = null;
     let fallbackCleanup = null;
     let currentFrontImage = null;
@@ -620,6 +651,13 @@ export async function revealRewardSequence(cards = [], options = {}) {
       resultsSummaryText
     );
     const resultsGrid = createElement(doc, 'div', 'st-r3-results-grid');
+    const resultsActions = createElement(doc, 'div', 'st-r3-results-actions');
+    const collectionButton = createElement(
+      doc,
+      'button',
+      'st-r3-collection',
+      revealCopy.viewCollectionCta || 'View Collection'
+    );
     const doneButton = createElement(doc, 'button', 'st-r3-done', revealCopy.doneCta || 'Done');
 
     title.id = `st-r3-title-${win.crypto?.randomUUID?.() || Date.now().toString(36)}`;
@@ -671,9 +709,15 @@ export async function revealRewardSequence(cards = [], options = {}) {
 
     resultsScene.hidden = true;
     resultsScene.setAttribute('aria-label', 'Booster results');
+    collectionButton.type = 'button';
     doneButton.type = 'button';
+    if (normalizedOptions.showCollectionCta) {
+      resultsActions.append(collectionButton, doneButton);
+    } else {
+      resultsActions.append(doneButton);
+    }
     resultsHeading.append(resultsTitle, resultsSummary);
-    resultsScene.append(resultsHeading, resultsGrid, doneButton);
+    resultsScene.append(resultsHeading, resultsGrid, resultsActions);
 
     progress.hidden = true;
     revealAllButton.type = 'button';
@@ -758,10 +802,22 @@ export async function revealRewardSequence(cards = [], options = {}) {
           )
         }, win.location.origin);
       } catch {}
-      resolve();
+      if (closeReason === 'view-collection') {
+        try {
+          if (normalizedOptions.onViewCollection) {
+            normalizedOptions.onViewCollection({ view: normalizedOptions.collectionView });
+          } else {
+            navigateToCollectionView(normalizedOptions.collectionView, win);
+          }
+        } catch {
+          // Keep reveal teardown successful even if navigation fails.
+        }
+      }
+      resolve({ reason: closeReason });
     };
 
     const close = reason => {
+      closeReason = reason || 'dismiss';
       if (controller) controller.close(undefined, reason);
       else finish();
     };
@@ -886,7 +942,7 @@ export async function revealRewardSequence(cards = [], options = {}) {
       setPhase('results');
       playRevealSound(win, 'results', activeAudio);
       liveStatus.textContent = `Reveal complete. ${resultsSummary.textContent}`;
-      focusControl(doneButton);
+      focusControl(normalizedOptions.showCollectionCta ? collectionButton : doneButton);
     };
 
     /** Presentation-only shortcut — never awards inventory. */
@@ -989,10 +1045,11 @@ export async function revealRewardSequence(cards = [], options = {}) {
       syncSoundToggle(soundButton, sfxEnabled);
       if (!sfxEnabled) stopAudio();
     });
+    collectionButton.addEventListener('click', () => close('view-collection'));
     doneButton.addEventListener('click', () => close('complete'));
     resultsScene.addEventListener('click', event => {
       if (phase !== 'results' || event.button !== 0) return;
-      if (event.target.closest('.st-r3-result-card, .st-r3-results-heading, .st-r3-done')) return;
+      if (event.target.closest('.st-r3-result-card, .st-r3-results-heading, .st-r3-results-actions, .st-r3-done, .st-r3-collection')) return;
       close('results-backdrop');
     });
     closeButton.addEventListener('click', () => close('button'));

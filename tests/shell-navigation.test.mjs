@@ -22,7 +22,7 @@ test('default shell navigation includes core destinations and slim account menu'
   ));
   assert.deepEqual(
     nav.accountMenu.signedIn.map(item => item.label),
-    ['View My Profile', 'Profile Settings', 'Notifications']
+    ['View My Profile', 'Profile Settings', 'Notifications', 'Sign Out']
   );
   assert.ok(PUBLIC_SHELL_DESTINATIONS.some(entry => entry.value === 'offers'));
   assert.ok(PUBLIC_SHELL_DESTINATIONS.some(entry => entry.value === 'feed' && entry.label === 'Activity Feed'));
@@ -44,11 +44,8 @@ test('default shell navigation includes core destinations and slim account menu'
   const account = nav.sidebar.sections.find(section => section.id === 'account');
   assert.ok(home.items.some(item => item.destination === 'home' && item.label === 'Home'));
   assert.ok(cards.items.some(item => item.destination === 'binder' && item.label === 'Card Gallery'));
-  assert.ok(cards.items.some(item =>
-    item.id === 'card-series'
-    && item.label === 'Card Series'
-    && item.destination === 'binder'
-    && !(item.features || []).includes('sectionLabel')
+  assert.ok(!cards.items.some(item =>
+    item.id === 'card-series' || /^card series$/i.test(String(item.label || '').trim())
   ));
   assert.ok(cards.items.some(item => item.id === 'event-cards' && item.label === 'Event Cards'));
   assert.ok(cards.items.some(item => item.id === 'special-cards' && item.label === 'Special Cards'));
@@ -89,12 +86,17 @@ test('default shell navigation includes core destinations and slim account menu'
     && link.label === 'Free Daily Card Pack'
     && (link.features || []).includes('dailyBadge')
   ));
+  assert.ok(nav.topBar.quickLinks.some(link =>
+    link.destination === 'collection' && link.label === 'My Binder'
+  ));
   assert.ok(!nav.topBar.quickLinks.some(link => link.destination === 'events'));
   assert.ok(!nav.topBar.quickLinks.some(link => link.destination === 'trades'));
   assert.ok(nav.accountMenu.signedIn.some(item => (item.features || []).includes('notificationBadge')));
   assert.ok(!nav.accountMenu.signedIn.some(item => (item.features || []).includes('receivedGiftBadge')));
   assert.ok(!nav.accountMenu.signedIn.some(item => (item.features || []).includes('tradeOfferBadge')));
-  assert.ok(!nav.accountMenu.signedIn.some(item => (item.features || []).includes('signOut')));
+  assert.ok(nav.accountMenu.signedIn.some(item =>
+    (item.features || []).includes('signOut') && item.label === 'Sign Out'
+  ));
   assert.ok(nav.accountMenu.signedOut.some(item => (item.features || []).includes('signIn')));
 });
 
@@ -186,7 +188,7 @@ test('sanitizeShellNavigation injects missing Cards destinations', () => {
   const cards = patched.sidebar.sections.find(section => section.id === 'cards');
   assert.deepEqual(
     cards.items.map(item => item.label),
-    ['Card Gallery', 'Card Series', 'Event Cards', 'Special Cards']
+    ['Card Gallery', 'Event Cards', 'Special Cards']
   );
   assert.ok(cards.items.some(item => item.id === 'event-cards' && (item.features || []).includes('eventCards')));
   assert.ok(cards.items.some(item => item.id === 'special-cards' && (item.features || []).includes('specialCards')));
@@ -228,11 +230,8 @@ test('sanitizeShellNavigation relocates checklist to Collection and keeps Daily 
   const collect = relocated.sidebar.sections.find(section => section.id === 'collect');
   const shop = relocated.sidebar.sections.find(section => section.id === 'shop');
   assert.ok(cards.items.some(item => item.label === 'Card Gallery'));
-  assert.ok(cards.items.some(item =>
-    item.id === 'card-series'
-    && item.label === 'Card Series'
-    && item.destination === 'binder'
-    && !(item.features || []).includes('sectionLabel')
+  assert.ok(!cards.items.some(item =>
+    item.id === 'card-series' || /^card series$/i.test(String(item.label || '').trim())
   ));
   assert.ok(cards.items.some(item => item.label === 'Event Cards'));
   assert.ok(cards.items.some(item => item.label === 'Special Cards'));
@@ -427,6 +426,9 @@ test('sanitizeShellNavigation preserves editor-authored top bar order and featur
   assert.ok(!(preserved.topBar.quickLinks[0].features || []).includes('dailyBadge'));
   assert.equal(preserved.topBar.quickLinks[1].destination, 'home');
   assert.equal(preserved.topBar.quickLinks[1].label, 'Start');
+  assert.ok(preserved.topBar.quickLinks.some(link =>
+    link.destination === 'collection' && link.label === 'My Binder'
+  ));
 });
 
 test('shell refreshes Star Bits totals when wallet or rewards change', async () => {
@@ -539,7 +541,7 @@ test('sanitizeShellNavigation strips Series/Admin sidebar and keeps account menu
   );
   assert.deepEqual(
     cleaned.accountMenu.signedIn.map(item => item.label),
-    ['View My Profile', 'Profile Settings', 'Notifications']
+    ['View My Profile', 'Profile Settings', 'Notifications', 'Sign Out']
   );
   assert.equal(cleaned.version, 4);
 });

@@ -103,7 +103,23 @@ function sanitizeAccountMenuItems(items, fallback) {
 
 function ensureAccountMenuAdminHub(signedIn, defaults) {
   // Administration Hub lives in the drawer/sidebar; keep account menu slim.
-  return Array.isArray(signedIn) ? [...signedIn] : [];
+  // Always keep Sign Out reachable for account switching.
+  const list = Array.isArray(signedIn) ? [...signedIn] : [];
+  if (list.some(item => (item.features || []).includes('signOut'))) return list;
+  const defaultSignOut = (defaults?.accountMenu?.signedIn || [])
+    .find(item => (item.features || []).includes('signOut'));
+  if (defaultSignOut) {
+    list.push(sanitizeItem({ ...defaultSignOut }, list.length));
+  } else {
+    list.push(sanitizeItem({
+      id: 'sign-out',
+      label: 'Sign Out',
+      destination: '',
+      enabled: true,
+      features: ['signOut']
+    }, list.length));
+  }
+  return list;
 }
 
 function consolidateTradingNavItems(items = []) {
@@ -215,8 +231,8 @@ function stripDailyFromSidebar(sections = []) {
 
 /**
  * Migrate legacy Cards megas that still bury Daily Pack or use a non-clickable
- * Card Series label slot. Always ensure the canonical Cards destinations exist:
- * Card Gallery, Card Series, Event Cards, Special Cards.
+ * Card Series label slot. Canonical Cards destinations: Card Gallery, Event Cards,
+ * Special Cards. Drop Card Series when it only duplicates Gallery.
  */
 function normalizeCardsSection(sections, defaults) {
   const cards = sections.find(section => section.id === 'cards');
@@ -256,7 +272,6 @@ function normalizeCardsSection(sections, defaults) {
       if (used.has(index)) return false;
       if (item.id && item.id === def.id) return true;
       if (def.id === 'binder' && item.destination === 'binder' && /gallery/i.test(String(item.label || ''))) return true;
-      if (def.id === 'card-series' && /^card series$/i.test(String(item.label || '').trim())) return true;
       if (def.id === 'event-cards' && (/^event cards$/i.test(String(item.label || '').trim()) || (item.features || []).includes('eventCards'))) return true;
       if (def.id === 'special-cards' && (/^special cards$/i.test(String(item.label || '').trim()) || (item.features || []).includes('specialCards'))) return true;
       return false;
@@ -278,6 +293,10 @@ function normalizeCardsSection(sections, defaults) {
 
   items.forEach((item, index) => {
     if (used.has(index)) return;
+    const isSeriesDuplicate = item.id === 'card-series'
+      || /^card series$/i.test(String(item.label || '').trim());
+    // Card Series → binder is the same destination as Card Gallery; drop it.
+    if (isSeriesDuplicate && item.destination === 'binder') return;
     ordered.push(sanitizeItem(item, ordered.length));
   });
 
@@ -478,6 +497,15 @@ function normalizeTopBarQuickLinks(links, defaults) {
       ...defaultDaily,
       features: [...(defaultDaily.features || [])]
     }];
+  }
+
+  // Keep My Binder reachable from the top bar without reshuffling editor order.
+  const defaultCollection = defaultLinks.find(link => link.destination === 'collection');
+  if (defaultCollection && !next.some(link => link.destination === 'collection')) {
+    next.push({
+      ...defaultCollection,
+      features: [...(defaultCollection.features || [])]
+    });
   }
 
   return next.slice(0, 10);

@@ -27,7 +27,7 @@ import {
   shouldReenterLoadingOnFrameLoad
 } from './shell-view-readiness.js';
 
-const SHELL_BUILD = '94.5.7';
+const SHELL_BUILD = '94.5.8';
 const VIEW_READY_TIMEOUT_MS = 6500;
 const MAX_VIEW_RETRIES = 1;
 const SFX_KEY = 'sora-starlight-card-binder-v7-sfx';

@@ -16,7 +16,7 @@ import {
   notifyShellEconomyChanged
 } from '../shell-economy.js';
 import { notifyShellFeedChanged } from '../shell-feed-notify.js';
-import { revealRewardSequence } from '../reward-reveal.js?v=1.5.21';
+import { revealRewardSequence } from '../reward-reveal.js?v=1.5.22';
 import { getPublicBoosterConfig } from '../booster-config-service.js';
 import { getCachedWebsiteContent } from '../website-content-hydrate.js';
 import { maybeCelebrateSeriesCompletions } from '../series-complete-celebration.js?v=1.0.0';

@@ -6,21 +6,39 @@ Project: `S:\NewVTuberProject\Stream Assets\Games\StarlightCard Site`
 
 Continue from this Games folder clone of `https://github.com/sorastarlight/starlight-cards.git` on `main`. Live: `https://cards.sorastarlight.net/`. Canonical: `AGENTS.md`.
 
+Original overhaul plan: Codex audit `card-site-audit.md` (2026-10-13) — keep foundation; incremental Phase 0–6 delivery; prioritize card-focused presentation and a coherent collector journey over new feature surfaces.
+
 ## Live verified (2026-10-14)
 
-| Asset | Live value |
+| Asset / check | Live / evidence value |
 | --- | --- |
-| `reward-reveal.js` | **1.5.21** |
-| `daily-booster-page.js` | **1.7.3** |
-| `app-shell.js` | **1.8.14** live (iframe `src` assign for first embed; Card Gallery default) |
-| `cloud-collection.js` / `app.js` | **1.4.5** / **1.9.26** (My Collection series progress) |
-| `card-tile.js` | **1.0.1** — live aria `View uncollected card NNN` |
-| `starlight-perspective-card.js` | **1.0.1** art fallback |
-| `card-filters.css` / `shared-ui.css` | **1.1.5** / **1.6.25** contrast + focus |
-| Twitch worker `/health` | **1.1.3** ok |
-| `admin-twitch-page.js` | **1.4.3** live (pipeline diag, grant notes, received retry, health detail) |
+| Checkout (pre-slice) | **`076e3a5`** — `npm run check` **228/228** |
+| Post-slice (this pass) | Reveal **1.5.22**, shell **1.8.15** / `shellBuild` **94.5.8**, daily page **1.7.4** — `npm run check` **228/228** pending Pages deploy |
+| Twitch worker `/health` | **1.1.4** ok |
+| `admin-twitch-page.js` | **1.4.3** live |
 
-Production daily mode still **unlimited**. Opening recovery migration applied earlier.
+Production daily mode still **unlimited**. Opening recovery + Twitch grant harden applied earlier.
+
+### Authenticated QA smoke (API; redacted)
+
+Evidence: `.local-review/qa-auth-smoke-evidence.json` (gitignored).
+
+| Check | Result |
+| --- | --- |
+| Sign-in QA A / B | Pass |
+| Controlled UUID open / replay | One claim; replay inventory **+0** |
+| Owner isolation | B cannot read A’s opening |
+| Twitch grant RPCs (ordinary JWT) | **403 / 42501** |
+
+### Browser scenarios (existing QA opening; no new claims)
+
+| Scenario | Result |
+| --- | --- |
+| QA A Daily **View latest pack** | Pass — 4 cards titled “Cards already received today”, each “Already received” |
+| Account switch A → B | Pass — B daily has no View CTA / 0 reward cards; collection **0 / 24** |
+| Switch back B → A | Pass — A collection **7 Unique / 8 Copies**, series progress visible |
+| Shell Sign Out control | Was missing from default account menu on live; restored in this slice (defaults + sanitize inject) |
+| Safe QA-linked Worker EventSub retry | **Pending external** — QA A/B have **0** Twitch links |
 
 ### A11y / perf evidence
 
@@ -31,20 +49,25 @@ Production daily mode still **unlimited**. Opening recovery migration applied ea
 
 ## Completed this overhaul push
 
-1. Reward integrity — recovery + isolated DB/concurrency.
+1. Reward integrity — recovery + isolated DB/concurrency + live UUID open/replay + owner isolation + browser View recovery.
 2. Home featured sets.
-3. Reveal fanfare — Reveal All/Skip, mute, reduced-motion.
+3. Reveal fanfare — Reveal All/Skip, mute, reduced-motion, **View Collection** results CTA (1.5.22).
 4. Collection — set progress, favorites, copy protection.
-5. Twitch — EventSub harden + admin reconciliation visibility (1.4.3).
-6. Deploy hygiene + a11y/perf matrix (zoom, contrast, fallbacks, slow-net).
+5. Twitch — EventSub harden + admin reconciliation + grant RPC permission harden.
+6. Deploy hygiene + a11y/perf matrix.
+7. Navigation — drop duplicate Card Series → Gallery; top-bar **My Binder**; restore **Sign Out** in account menu.
 
-## Blocker (overhaul not complete)
+## Remaining overhaul (product experience)
 
-**Authenticated Daily Pack open/replay smoke needs QA credentials.** No secrets/credentials are in agent stores. Provide a dedicated QA account (or test JWT flow) to finish live reward-integrity smoke. Do not invent access.
+Reliability for daily open/replay and Twitch client denial is done. Still unfinished vs audit:
 
-Optional later: Helix subscription inventory vs rules (M/L).
+- Progression clarity (XP vs Star Bits vs season explained separately).
+- Post-reveal per-card favorite (results CTA navigates to collection; inline favorite still open).
+- Admin/Twitch ops — Worker live retry once a safe QA-linked event exists.
+- Optional: Sign Out chrome discoverability; iframe a11y tree still exposes native gallery under embeds.
 
 ## Notes
 
 - Do not install `starlight_test` on production.
-- Overhaul **not complete** until authenticated Daily Pack smoke passes.
+- Do not rewrite previously applied migrations.
+- Economic changes, destructive ops, paid resources, and expanded permissions stay out of scope unless newly authorized.
