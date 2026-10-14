@@ -1091,6 +1091,18 @@ function getVisibleName(card) {
   if (isCollected(card.id) || isDullUnownedPreview()) return displayName(card);
   return "???";
 }
+
+/** Screen-reader label: keep mystery visuals, but name locked cards by number. */
+function galleryCardAriaLabel(card) {
+  const visible = getVisibleName(card);
+  if (visible && visible !== '???') return `View ${visible}`;
+  const number = window.StarlightCardFilters?.cardDisplayNumber?.(card)
+    || card.collectorNumber
+    || card.number
+    || card.id
+    || 'card';
+  return `View uncollected card ${number}`;
+}
 function getVisibleRarity(card) {
   if (isCollected(card.id) || isDullUnownedPreview()) return card.rarity;
   return "Unknown";
@@ -2192,7 +2204,7 @@ function renderGalleryCardLegacy(card, i) {
   const qty = getCardQuantity(card.id);
   const stateClass = got ? 'is-owned' : 'is-unowned';
   return `<article class="card-gallery-item ${rarityClass(card)} ${stateClass}" style="--i:${i}">
-    <button class="card-gallery-btn" type="button" data-v61-card="${esc(card.id)}" aria-label="View ${esc(getVisibleName(card))}">
+    <button class="card-gallery-btn" type="button" data-v61-card="${esc(card.id)}" aria-label="${esc(galleryCardAriaLabel(card))}">
       <span class="card-gallery-art">${perspectiveArt(card, { imageUrl: img, alt: getVisibleName(card), visible: perspectiveArtVisible(card, got) })}</span>
       <span class="card-gallery-number">${esc(numberLabel)}</span>
     </button>
