@@ -123,6 +123,17 @@
   box-shadow: 0 0 0 4px rgba(255, 130, 200, .12);
 }
 
+.card-filter-fields input:focus-visible,
+.card-filter-fields select:focus-visible,
+.card-filter-reset:focus-visible,
+.card-filter-view input:focus-visible,
+.card-filter-favorites-control:focus-within {
+  outline: 3px solid var(--st-color-ink, #34466f);
+  outline-offset: 2px;
+  border-color: var(--st-color-pink, #ff82c8);
+  box-shadow: none;
+}
+
 .card-filter-view {
   grid-template-columns: repeat(3, max-content);
   align-content: center;
@@ -249,5 +260,50 @@
   [data-card-filter-context="checklist"] .card-filter-fields { grid-template-columns: 1fr; }
   .card-filter-view { grid-template-columns: 1fr; }
   .card-filter-favorites-control { width: 100%; justify-content: flex-start; }
+}
+
+@media (prefers-contrast: more) {
+  .card-filter-binder-summary,
+  .card-filter-set-progress-label,
+  .card-filter-fields > label > span:first-child,
+  .card-filter-view legend,
+  .card-filter-favorites > span:first-child,
+  .card-filter-view label,
+  .card-filter-favorites-control {
+    color: #24345c;
+  }
+
+  .card-filter-set-progress-track,
+  .card-filter-fields input[type="search"],
+  .card-filter-fields select,
+  .card-filter-view,
+  .card-filter-favorites-control,
+  .card-filter-reset {
+    border-color: #34466f;
+    background: #fff;
+  }
+
+  .card-filter-set-progress-bar {
+    background: #405fa1;
+  }
+
+  .card-filter-fields input:focus-visible,
+  .card-filter-fields select:focus-visible,
+  .card-filter-reset:focus-visible {
+    outline: 3px solid #000;
+    outline-offset: 2px;
+  }
+}
+
+@media (forced-colors: active) {
+  .card-filter-set-progress-bar {
+    background: Highlight;
+  }
+
+  .card-filter-fields input:focus-visible,
+  .card-filter-fields select:focus-visible,
+  .card-filter-reset:focus-visible {
+    outline: 3px solid Highlight;
+  }
 }
 

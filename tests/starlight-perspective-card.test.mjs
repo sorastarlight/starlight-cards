@@ -59,6 +59,10 @@ test('perspective card module resolves effect styles and builds opt-in markup', 
   const plain = api.cardArtMarkup({ id: 'x', name: 'Plain' }, { imageUrl: 'cards/001.png', alt: 'Plain' });
   assert.doesNotMatch(plain, /data-perspective-card/);
   assert.match(plain, /<img/);
+  assert.match(plain, /data-fallback-src=/);
+  assert.match(plain, /onerror=/);
+  assert.match(markup, /data-fallback-src=/);
+  assert.equal(typeof api.bindImageFallback, 'function');
 });
 
 test('binder and reveal surfaces integrate premium card art helpers', async () => {

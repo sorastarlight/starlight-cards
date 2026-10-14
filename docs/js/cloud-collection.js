@@ -645,7 +645,7 @@ async function loadBinderApplication() {
 
     return new Promise((resolve, reject) => {
         const perspectiveScript = document.createElement("script");
-        perspectiveScript.src = "./js/starlight-perspective-card.js?v=1.0.0";
+        perspectiveScript.src = "./js/starlight-perspective-card.js?v=1.0.1";
         perspectiveScript.async = false;
 
         perspectiveScript.addEventListener(
@@ -659,7 +659,7 @@ async function loadBinderApplication() {
                     "load",
                     () => {
                         const script = document.createElement("script");
-                        script.src = "./js/app.js?v=1.9.24";
+                        script.src = "./js/app.js?v=1.9.25";
                         script.async = false;
                         script.dataset.starlightApp = "true";
 

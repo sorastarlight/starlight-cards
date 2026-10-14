@@ -746,6 +746,7 @@ function openPngLightbox(listMode = 'filtered') {
   api.open({
     list,
     cardId: selected.id,
+    cardBackUrl: CARD_BACK_URL,
     restoreFocus: document.activeElement,
     getCardArt: (card) => {
       const got = isCollected(card.id);

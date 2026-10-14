@@ -5,6 +5,7 @@
 (function initStarlightPerspectiveCard(global) {
   const EFFECT_STYLES = new Set(['none', 'shine', 'special-art', 'holographic', 'legendary', 'rainbow']);
   const SPARKLE_STYLES = new Set(['special-art', 'legendary', 'rainbow']);
+  const DEFAULT_CARD_BACK = 'site_assets/StarlightCard_Back_NewLogo.png';
   const controllers = new WeakMap();
 
   function motionReduced() {
@@ -20,6 +21,24 @@
 
   function escapeAttr(value = '') {
     return String(value).replace(/"/g, '&quot;');
+  }
+
+  /** One-shot broken-art recovery; keeps gallery/reveal tiles from showing empty images. */
+  function bindImageFallback(image, fallback = DEFAULT_CARD_BACK) {
+    if (!image || image.dataset.fallbackBound === '1') return image;
+    image.dataset.fallbackBound = '1';
+    const target = String(fallback || DEFAULT_CARD_BACK).trim() || DEFAULT_CARD_BACK;
+    image.addEventListener('error', () => {
+      if (image.dataset.fallbackApplied === 'true') return;
+      image.dataset.fallbackApplied = 'true';
+      if (target && image.getAttribute('src') !== target) image.src = target;
+    });
+    return image;
+  }
+
+  function imageWithFallbackAttrs(src, alt, imgClass = '', fallback = DEFAULT_CARD_BACK) {
+    const safeFallback = escapeAttr(fallback || DEFAULT_CARD_BACK);
+    return `<img class="${imgClass}" src="${escapeAttr(src)}" alt="${escapeAttr(alt)}" loading="lazy" data-fallback-src="${safeFallback}" onerror="if(this.dataset.fallbackApplied==='true')return;this.dataset.fallbackApplied='true';this.src=this.dataset.fallbackSrc||'${safeFallback}'">`;
   }
 
   /** @returns {string|null} Active effect style or null when unchanged / standard. */
@@ -50,15 +69,17 @@
     alt = '',
     effectStyle = 'special-art',
     effectIntensity = 65,
-    imgClass = ''
+    imgClass = '',
+    cardBackUrl = DEFAULT_CARD_BACK
   } = {}) {
     if (!effectStyle || effectStyle === 'none') {
-      return `<img class="${imgClass}" src="${escapeAttr(imageUrl)}" alt="${escapeAttr(alt)}" loading="lazy">`;
+      return imageWithFallbackAttrs(imageUrl, alt, imgClass, cardBackUrl);
     }
+    const safeFallback = escapeAttr(cardBackUrl || DEFAULT_CARD_BACK);
     return `<div class="starlight-card starlight-perspective-card starlight-card--interactive starlight-effect-${escapeAttr(effectStyle)}" data-effect-style="${escapeAttr(effectStyle)}" data-effect-intensity="${effectIntensity}" data-perspective-card>
       <div class="starlight-card__transformer starlight-card-transformer">
         <div class="starlight-card__front starlight-card-front">
-          <img class="${imgClass}" src="${escapeAttr(imageUrl)}" alt="${escapeAttr(alt)}" loading="lazy" draggable="false">
+          <img class="${imgClass}" src="${escapeAttr(imageUrl)}" alt="${escapeAttr(alt)}" loading="lazy" draggable="false" data-fallback-src="${safeFallback}" onerror="if(this.dataset.fallbackApplied==='true')return;this.dataset.fallbackApplied='true';this.src=this.dataset.fallbackSrc||'${safeFallback}'">
         </div>
         <div class="starlight-card__shine starlight-card-shine" aria-hidden="true"></div>
         ${sparklesMarkup(effectStyle)}
@@ -66,19 +87,21 @@
     </div>`;
   }
 
-  function cardArtMarkup(card = {}, { imageUrl, alt = '', imgClass = '', visible = true } = {}) {
+  function cardArtMarkup(card = {}, { imageUrl, alt = '', imgClass = '', visible = true, cardBackUrl = DEFAULT_CARD_BACK } = {}) {
     const style = resolveEffectStyle(card);
     const src = imageUrl || card.thumbnailUrl || card.imageUrl || '';
     const label = alt || card.name || 'Card artwork';
+    const fallback = cardBackUrl || DEFAULT_CARD_BACK;
     if (!style || !visible || !src) {
-      return `<img class="${imgClass}" src="${escapeAttr(src)}" alt="${escapeAttr(label)}" loading="lazy">`;
+      return imageWithFallbackAttrs(src || fallback, label, imgClass, fallback);
     }
     return buildPerspectiveCardMarkup({
       imageUrl: src,
       alt: label,
       effectStyle: style,
       effectIntensity: resolveEffectIntensity(card),
-      imgClass
+      imgClass,
+      cardBackUrl: fallback
     });
   }
 
@@ -202,6 +225,8 @@
   function attachPerspectiveCard(root, options = {}) {
     if (!root || root.dataset.perspectiveBound === '1') return root;
     root.dataset.perspectiveBound = '1';
+    const img = root.querySelector('img');
+    if (img) bindImageFallback(img, options.cardBackUrl || img.dataset.fallbackSrc || DEFAULT_CARD_BACK);
     controllers.set(root, new PerspectiveController(root, options));
     return root;
   }
@@ -226,9 +251,11 @@
   }
 
   const api = {
+    DEFAULT_CARD_BACK,
     resolveEffectStyle,
     resolveEffectIntensity,
     hasPremiumPerspective,
+    bindImageFallback,
     buildPerspectiveCardMarkup,
     cardArtMarkup,
     attachPerspectiveCard,

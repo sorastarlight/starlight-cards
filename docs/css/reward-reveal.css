@@ -1,5 +1,5 @@
 /*
- * Approved reveal presentation baseline: v1.5.20.
+ * Approved reveal presentation baseline: v1.5.21.
  * Keep its motion contract intact unless this version and its regression test
  * are intentionally advanced together.
  */
@@ -266,6 +266,29 @@
   text-align: center;
   text-transform: uppercase;
   transform: translateX(-50%);
+}
+@media (prefers-contrast: more) {
+  .st-r3-progress,
+  .st-r3-skip-btn {
+    border-color: #fff;
+    background: #000;
+    color: #fff;
+  }
+  .st-r3-skip-btn:focus-visible {
+    outline: 3px solid #fff;
+    outline-offset: 2px;
+  }
+}
+@media (forced-colors: active) {
+  .st-r3-progress,
+  .st-r3-skip-btn {
+    border: 1px solid CanvasText;
+    background: Canvas;
+    color: CanvasText;
+  }
+  .st-r3-skip-btn:focus-visible {
+    outline: 3px solid Highlight;
+  }
 }
 .st-r3-skip-bar {
   position: absolute;

@@ -5,7 +5,8 @@
 
 const ROOT_ID = 'starlight-png-lightbox';
 const STYLE_ID = 'starlight-png-lightbox-css';
-const STYLE_HREF = 'css/card-png-lightbox.css?v=1.0.2';
+const STYLE_HREF = 'css/card-png-lightbox.css?v=1.0.3';
+const DEFAULT_CARD_BACK = 'site_assets/StarlightCard_Back_NewLogo.png';
 
 function getHost() {
   try {
@@ -83,14 +84,27 @@ function ensureRoot(doc) {
 
 let active = null;
 
+function bindLightboxImageFallback(img, fallback) {
+  if (!img || img.dataset.fallbackBound === '1') return;
+  img.dataset.fallbackBound = '1';
+  img.addEventListener('error', () => {
+    if (img.dataset.fallbackApplied === 'true') return;
+    img.dataset.fallbackApplied = 'true';
+    const target = active?.cardBackUrl || fallback || DEFAULT_CARD_BACK;
+    if (target && img.getAttribute('src') !== target) img.src = target;
+  });
+}
+
 function renderActive() {
   if (!active) return;
-  const { root, list, index, getCardArt, getCardMeta, getFinish, supportsHolo } = active;
+  const { root, list, index, getCardArt, getCardMeta, getFinish, supportsHolo, cardBackUrl } = active;
   const card = list[index];
   if (!card) return;
   const img = root.querySelector('.png-lightbox-image');
   const art = getCardArt(card);
-  img.src = art.src;
+  bindLightboxImageFallback(img, cardBackUrl || DEFAULT_CARD_BACK);
+  img.dataset.fallbackApplied = 'false';
+  img.src = art.src || cardBackUrl || DEFAULT_CARD_BACK;
   img.alt = art.alt || '';
   const meta = getCardMeta(card);
   root.querySelector('[data-png-kicker]').textContent = meta.kicker || '';
@@ -171,6 +185,7 @@ function open(options = {}) {
     win,
     list,
     index,
+    cardBackUrl: options.cardBackUrl || DEFAULT_CARD_BACK,
     getCardArt: options.getCardArt || ((card) => ({ src: card.imageUrl || '', alt: card.name || '' })),
     getCardMeta: options.getCardMeta || ((card) => ({
       kicker: card.series || '',

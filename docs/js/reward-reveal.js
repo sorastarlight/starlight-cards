@@ -247,7 +247,7 @@ function acquireRevealViewportLock(doc) {
   };
 }
 
-export const REVEAL_PRESENTATION_VERSION = '1.5.20';
+export const REVEAL_PRESENTATION_VERSION = '1.5.21';
 
 const REVEAL_STYLESHEET_ID = `starlight-reveal-v${REVEAL_PRESENTATION_VERSION.replace(/\./g, '')}`;
 const REVEAL_STYLESHEET_URL = new URL(
@@ -322,12 +322,15 @@ function mountCardArt(doc, host, card, { imgClass = 'st-r3-card-image', alt = ''
     template.innerHTML = markup.trim();
     const root = template.content.firstElementChild;
     host.replaceChildren(root);
-    perspective.attachPerspectiveCard?.(root, { maxTilt: 14 });
+    perspective.attachPerspectiveCard?.(root, { maxTilt: 14, cardBackUrl: DEFAULT_BACK });
     const img = root.querySelector('img');
-    if (img && defer) {
-      img.dataset.source = card.imageUrl || DEFAULT_BACK;
-    } else if (img && card.imageUrl) {
-      img.src = card.imageUrl;
+    if (img) {
+      perspective.bindImageFallback?.(img, DEFAULT_BACK);
+      if (defer) {
+        img.dataset.source = card.imageUrl || DEFAULT_BACK;
+      } else if (card.imageUrl) {
+        img.src = card.imageUrl;
+      }
     }
     return img || root;
   }
