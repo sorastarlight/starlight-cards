@@ -27,7 +27,7 @@ import {
   shouldReenterLoadingOnFrameLoad
 } from './shell-view-readiness.js';
 
-const SHELL_BUILD = '94.5.6';
+const SHELL_BUILD = '94.5.7';
 const VIEW_READY_TIMEOUT_MS = 6500;
 const MAX_VIEW_RETRIES = 1;
 const SFX_KEY = 'sora-starlight-card-binder-v7-sfx';
@@ -922,13 +922,26 @@ document.addEventListener('keydown',e=>{
 });
 window.addEventListener('popstate',()=>{
   const params=new URLSearchParams(location.search);
-  const view=params.get('view')||'home';
+  const view=aliasShellRoute(params.get('view')||'home')||'home';
   const extra=locationExtraParams();
-  // Defer so iframe session history can settle with the parent entry before we
-  // decide whether to adopt the restored document or navigate fresh.
-  window.setTimeout(()=>{
-    navigate(view,{push:false,extra});
-  },0);
+  const routeSrc=routes[view]?.src||null;
+  // Wait until iframe session history catches the parent entry. Navigating too
+  // early races a fresh shellLoad against the restored document and sticks loading.
+  let tries=0;
+  const settle=()=>{
+    tries+=1;
+    const href=getFrameLocation();
+    const settled=!routeSrc
+      || frameHrefMatchesRouteSrc(href, routeSrc)
+      || href.includes('about:blank')
+      || tries>=20;
+    if(settled){
+      navigate(view,{push:false,extra});
+      return;
+    }
+    window.setTimeout(settle,25);
+  };
+  window.setTimeout(settle,0);
 });
 window.addEventListener('message',async e=>{
   if(e.origin!==location.origin)return;
