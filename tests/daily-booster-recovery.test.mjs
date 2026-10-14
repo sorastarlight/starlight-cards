@@ -237,10 +237,9 @@ test('unlimited availability still surfaces pending local receipt for View witho
   assert.equal(reconciled.cards.length, 2);
 });
 
-test('unlimited mode cannot recover claim cards after cleared storage or on another device', () => {
-  // Documented limitation (no DB/mode change in this slice): free_daily mode=unlimited
-  // keeps status.available=true and does not return cardsAwarded on the status RPC.
-  // View/replay therefore depends entirely on the same-browser local receipt.
+test('unlimited pre-migration cannot recover after cleared storage without latestOpening', () => {
+  // Pre-migration / no recoverySupported: status stays available with empty cardsAwarded.
+  // Post-migration recovery is covered in daily-booster-opening-recovery.test.mjs.
   installStorage();
   const today = easternClaimDate();
 
@@ -338,6 +337,8 @@ test('replay display cards use already-received wording, not New Card!', () => {
     assert.equal(card.resultPill, 'Already received');
     assert.equal(card.resultPillKind, 'replay');
     assert.notEqual(card.resultPill, 'New Card!');
+    // Historical receipt quantities are not current inventory.
+    assert.equal(card.quantity, null);
   }
 });
 

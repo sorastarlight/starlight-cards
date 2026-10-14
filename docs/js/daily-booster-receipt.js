@@ -1,16 +1,15 @@
 /**
  * Account-scoped daily-pack reveal receipts (display hints only).
- * Server claim status + cardsAwarded remain authoritative when the server
- * exposes them (typical once-per-day / claimed status).
+ * Server claim status + cardsAwarded / latestOpening remain authoritative when
+ * the server exposes them (daily claimed status, or post-migration unlimited
+ * latestOpening + get_my_daily_booster_opening).
  *
- * Unlimited-mode limitation (by design until a later slice): status stays
- * available with empty cardsAwarded, so View/replay after claim depends on this
- * local receipt. Cleared site storage, a private session, or another device
- * cannot reconstruct today’s awarded card list from the status RPC alone — the
- * server does not currently expose an accessible claim-receipt payload in that
- * mode. Collection rows may still exist server-side; this module only covers
- * same-browser reveal recovery.
+ * Historical unlimited openings from before server-backed recovery never wrote
+ * a claim row and cannot be reconstructed. Receipt quantities are not current
+ * inventory — reconcile live ownership separately on replay.
  */
+
+import { statusSupportsOpeningRecovery } from './daily-booster-opening-request.js';
 
 export const DAILY_RECEIPT_KEY_PREFIX = 'starlight-daily-receipt-v1:user:';
 
@@ -89,6 +88,8 @@ export function readDailyReceipt(ownerId) {
       status,
       nextClaimAt: parsed.nextClaimAt || null,
       claimedAt: parsed.claimedAt || null,
+      claimId: parsed.claimId ?? null,
+      requestId: parsed.requestId || null,
       cards,
       generation: Number(parsed.generation) || 0,
       updatedAt: parsed.updatedAt || null
@@ -113,6 +114,8 @@ export function writeDailyReceipt(ownerId, receipt) {
     status: receipt.status === 'complete' ? 'complete' : 'pending_reveal',
     nextClaimAt: receipt.nextClaimAt || null,
     claimedAt: receipt.claimedAt || null,
+    claimId: receipt.claimId ?? null,
+    requestId: receipt.requestId || null,
     cards,
     generation: Number(receipt.generation) || 0,
     updatedAt: new Date().toISOString()
@@ -128,9 +131,17 @@ export function clearDailyReceipt(ownerId) {
   storage.removeItem(key);
 }
 
+function latestOpeningCards(status) {
+  if (!statusSupportsOpeningRecovery(status)) return [];
+  const latest = status.latestOpening;
+  if (!latest || typeof latest !== 'object') return [];
+  return normalizeDailyAwardCards(latest.cards || latest.cardsAwarded);
+}
+
 /**
  * Reconcile local receipt hint with authoritative get_daily_booster_status payload.
  * Never invents availability; claimed recovery is never "another pack".
+ * Unlimited View-latest uses status.latestOpening only when recovery is supported.
  */
 export function reconcileDailyRecoveryState({
   status,
@@ -179,31 +190,55 @@ export function reconcileDailyRecoveryState({
     String(receipt.claimDate) === claimDate;
   const localReplayCards = receiptOk ? normalizeDailyAwardCards(receipt.cards) : [];
   const pendingReveal = Boolean(receiptOk && receipt.status === 'pending_reveal');
+  const recoverySupported = statusSupportsOpeningRecovery(status);
+  const serverLatestCards = latestOpeningCards(status);
+  const viewLatestLabel =
+    String(status.viewLatestLabel || '').trim() ||
+    (String(status.mode || '') === 'unlimited' ? 'View latest pack' : "View today’s cards");
 
-  // Unlimited (and other available) modes never expose cardsAwarded on status.
-  // Keep pack availability, but still offer View for same-day receipt results.
+  // Unlimited (and other available) modes keep the pack open.
+  // View action: pending local receipt first; else server latestOpening when supported.
   if (status.available) {
+    const cards = localReplayCards.length
+      ? localReplayCards
+      : recoverySupported
+        ? serverLatestCards
+        : [];
+    const viewSource = localReplayCards.length
+      ? 'local-receipt'
+      : serverLatestCards.length
+        ? 'server-latest'
+        : 'none';
     return {
       kind: 'available',
       available: true,
       disabled: false,
       mode: status.mode || null,
-      cards: localReplayCards,
-      showViewAction: localReplayCards.length > 0,
+      cards,
+      showViewAction: cards.length > 0,
+      viewActionKind: localReplayCards.length
+        ? 'pending-receipt'
+        : serverLatestCards.length
+          ? 'view-latest'
+          : 'none',
+      viewLatestLabel,
       pendingReveal,
       claimDate,
+      claimedAt: status.latestOpening?.claimedAt || (receiptOk ? receipt.claimedAt : null),
+      claimId: status.latestOpening?.claimId ?? (receiptOk ? receipt.claimId : null),
+      requestId: status.latestOpening?.requestId || (receiptOk ? receipt.requestId : null),
       nextClaimAt: status.nextClaimAt || null,
-      source: localReplayCards.length ? 'local-receipt' : 'none',
+      source: viewSource,
+      recoverySupported,
       receiptOk: Boolean(receiptOk)
     };
   }
 
   const serverCards = normalizeDailyAwardCards(status.cardsAwarded);
-
-  // Midnight / wrong-day local hint: ignore for display, keep server truth.
   const localCards = localReplayCards;
   const cards = serverCards.length ? serverCards : localCards;
-  const showViewAction = cards.length > 0 && (pendingReveal || !receiptOk || receipt.status !== 'complete');
+  const showViewAction =
+    cards.length > 0 && (pendingReveal || !receiptOk || receipt.status !== 'complete');
 
   return {
     kind: 'claimed',
@@ -212,11 +247,17 @@ export function reconcileDailyRecoveryState({
     mode: status.mode || null,
     claimDate,
     claimedAt: status.claimedAt || (receiptOk ? receipt.claimedAt : null),
+    claimId: status.claimId ?? status.latestOpening?.claimId ?? (receiptOk ? receipt.claimId : null),
+    requestId:
+      status.requestId || status.latestOpening?.requestId || (receiptOk ? receipt.requestId : null),
     nextClaimAt: status.nextClaimAt || (receiptOk ? receipt.nextClaimAt : null),
     cards,
     source: serverCards.length ? 'server' : localCards.length ? 'local-receipt' : 'none',
     pendingReveal,
     showViewAction,
+    viewActionKind: showViewAction ? 'claimed-recovery' : 'none',
+    viewLatestLabel,
+    recoverySupported,
     receiptOk
   };
 }
@@ -224,6 +265,7 @@ export function reconcileDailyRecoveryState({
 /**
  * Decide recovery after a lost/ambiguous open_daily_booster response.
  * Uses status RPC only — never implies a new grant.
+ * For unlimited + recoverySupported, latestOpening can recover cleared storage.
  */
 export function resolveLostClaimRecovery(statusResult, { ownerId, todayClaimDate, epoch } = {}) {
   const reconciled = reconcileDailyRecoveryState({
@@ -233,15 +275,24 @@ export function resolveLostClaimRecovery(statusResult, { ownerId, todayClaimDate
     todayClaimDate,
     epoch
   });
-  if (reconciled.kind !== 'claimed' || !reconciled.cards.length) {
-    return { recoverable: false, reconciled };
+  if (reconciled.kind === 'claimed' && reconciled.cards.length) {
+    return { recoverable: true, reconciled };
   }
-  return { recoverable: true, reconciled };
+  // Post-migration unlimited: latestOpening recovers without a local receipt.
+  if (
+    reconciled.kind === 'available' &&
+    reconciled.recoverySupported &&
+    reconciled.source === 'server-latest' &&
+    reconciled.cards.length
+  ) {
+    return { recoverable: true, reconciled };
+  }
+  return { recoverable: false, reconciled };
 }
 
 /**
  * Outcome after alreadyClaimed / lost open when a status read is attempted.
- * Never implies calling open_daily_booster again.
+ * Never implies calling open_daily_booster again with a new request id.
  */
 export function resolvePostClaimStatusOutcome({
   status,
@@ -269,13 +320,26 @@ export function resolvePostClaimStatusOutcome({
   return { action: 'apply-reconciled', recoverable: false, reconciled };
 }
 
-/** Display labels for replaying already-received daily cards (not a new grant). */
-export function buildReplayResultCards(cards) {
-  return normalizeDailyAwardCards(cards).map((card) => ({
-    ...card,
-    resultPill: 'Already received',
-    resultPillKind: 'replay'
-  }));
+/**
+ * Display labels for replaying already-received daily cards (not a new grant).
+ * Historical receipt quantities are not treated as current inventory — pass
+ * currentQuantities from the live collection when available.
+ */
+export function buildReplayResultCards(cards, { currentQuantities = null } = {}) {
+  return normalizeDailyAwardCards(cards).map((card) => {
+    const id = String(card.id ?? card.cardId ?? card.card_id ?? '').trim();
+    const liveQty =
+      currentQuantities && id ? Number(currentQuantities[id]) : Number.NaN;
+    const hasLive = Number.isFinite(liveQty) && liveQty > 0;
+    return {
+      ...card,
+      // Strip historical award snapshot quantities unless live ownership is known.
+      quantity: hasLive ? liveQty : null,
+      isDuplicate: hasLive ? liveQty > 1 : false,
+      resultPill: 'Already received',
+      resultPillKind: 'replay'
+    };
+  });
 }
 
 export function shouldClearDisplayedResults(kind) {

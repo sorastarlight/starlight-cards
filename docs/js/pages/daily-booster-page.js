@@ -1,6 +1,12 @@
 import { supabase } from '../supabase-client.js';
-import { getDailyBoosterStatus, openDailyBooster } from '../daily-booster-service.js';
 import {
+  clearPendingOpeningRequest,
+  getDailyBoosterStatus,
+  openDailyBooster,
+  recoverOpeningByRequestId
+} from '../daily-booster-service.js?v=1.1.0';
+import {
+  ACTIVE_QUANTITIES_KEY,
   applyAwardedCardsToLocalStore,
   captureOwnershipEpoch,
   ownershipEpochMatches
@@ -24,7 +30,7 @@ import {
   resolvePostClaimStatusOutcome,
   shouldClearDisplayedResults,
   writeDailyReceipt
-} from '../daily-booster-receipt.js?v=1.0.1';
+} from '../daily-booster-receipt.js?v=1.1.0';
 
 let dailyCopy = getCachedWebsiteContent()?.daily || {};
 
@@ -84,10 +90,26 @@ function startCountdown(value) {
   timer = setInterval(tick, 1000);
 }
 
-function setViewTodayVisible(visible) {
+function liveQuantities() {
+  try {
+    const raw = globalThis.localStorage?.getItem(ACTIVE_QUANTITIES_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function setViewTodayVisible(visible, { label = null } = {}) {
   if (!viewToday) return;
   viewToday.classList.toggle('hidden', !visible);
   viewToday.disabled = !visible || isBusy;
+  if (visible && label) {
+    viewToday.textContent = label;
+  } else if (visible && !viewToday.textContent.trim()) {
+    viewToday.textContent = dailyCopy.viewTodayCta || "View today’s cards";
+  }
 }
 
 function setRetryStatusVisible(visible) {
@@ -123,7 +145,9 @@ function canPaint(epoch) {
 
 function render(cards, title = dailyCopy.pullsTitle || 'Your Pulls', { epoch = null, replay = false } = {}) {
   if (!canPaint(epoch)) return;
-  const displayCards = replay ? buildReplayResultCards(cards) : cards || [];
+  const displayCards = replay
+    ? buildReplayResultCards(cards, { currentQuantities: liveQuantities() })
+    : cards || [];
   rewardTitle.textContent = title;
   rewardGrid.replaceChildren();
   for (const card of displayCards) {
@@ -134,14 +158,20 @@ function render(cards, title = dailyCopy.pullsTitle || 'Your Pulls', { epoch = n
     const number = card.cardNumber ?? card.card_number ?? '';
     const rarity = card.rarity || 'Unknown';
     const series = card.seriesName || card.series_name || '';
-    const quantity = card.quantity ?? 1;
+    const quantity = card.quantity;
+    const quantityLine =
+      quantity != null && Number.isFinite(Number(quantity))
+        ? `<p>Quantity: ${quantity}</p>`
+        : replay
+          ? '<p>Owned in collection</p>'
+          : '<p>Quantity: 1</p>';
     const pill = replay
       ? card.resultPill || 'Already received'
       : card.isDuplicate
         ? 'Duplicate Pull'
         : 'New Card!';
     const pillClass = replay ? 'replay' : card.isDuplicate ? 'duplicate' : '';
-    item.innerHTML = `<span class="reward-card-art"><img src="${art}" alt="${name} card artwork"></span><h3>#${number} ${name}</h3><p>${rarity} • ${series}</p><p>Quantity: ${quantity}</p><span class="reward-pill ${pillClass}">${pill}</span>`;
+    item.innerHTML = `<span class="reward-card-art"><img src="${art}" alt="${name} card artwork"></span><h3>#${number} ${name}</h3><p>${rarity} • ${series}</p>${quantityLine}<span class="reward-pill ${pillClass}">${pill}</span>`;
     rewardGrid.append(item);
   }
   rewardSection.classList.remove('hidden');
@@ -200,9 +230,14 @@ function setPortalReady(
       "Your Free Pack is ready again. You can also view today’s interrupted results without opening another pack."
     : dailyCopy.readyLead || "Click the pack to view today's cards.";
   countdown.classList.add('hidden');
-  setViewTodayVisible(showView);
+  setViewTodayVisible(showView, {
+    label:
+      dailyCopy.viewLatestCta ||
+      dailyCopy.viewTodayCta ||
+      "View latest pack"
+  });
   pendingRecovery = showView
-    ? { cards, nextClaimAt, claimDate, claimedAt }
+    ? { cards, nextClaimAt, claimDate, claimedAt, viewActionKind: 'view-latest' }
     : null;
   if (showView && cards.length) {
     render(cards, dailyCopy.replayResultsTitle || 'Cards already received today', {
@@ -234,13 +269,18 @@ function setPortalClaimed(data, { showView = false, epoch = null, replay = false
   } else {
     clearRewardResults();
   }
-  setViewTodayVisible(showView);
+  setViewTodayVisible(showView, {
+    label: dailyCopy.viewTodayCta || "View today’s cards"
+  });
   pendingRecovery = showView
     ? {
         cards: data.cardsAwarded || [],
         nextClaimAt: data.nextClaimAt || null,
         claimDate: data.claimDate || null,
-        claimedAt: data.claimedAt || null
+        claimedAt: data.claimedAt || null,
+        claimId: data.claimId || null,
+        requestId: data.requestId || null,
+        viewActionKind: 'claimed-recovery'
       }
     : null;
 }
@@ -257,12 +297,17 @@ function setPortalRecovery(data, { epoch = null } = {}) {
     dailyCopy.recoveryLead ||
     'Your Free Daily Starlight Pack was already claimed. View today’s cards without opening another pack.';
   startCountdown(data.nextClaimAt);
-  setViewTodayVisible(true);
+  setViewTodayVisible(true, {
+    label: data.viewLatestLabel || dailyCopy.viewTodayCta || "View today’s cards"
+  });
   pendingRecovery = {
     cards: data.cards || [],
     nextClaimAt: data.nextClaimAt || null,
     claimDate: data.claimDate || null,
-    claimedAt: data.claimedAt || null
+    claimedAt: data.claimedAt || null,
+    claimId: data.claimId || null,
+    requestId: data.requestId || null,
+    viewActionKind: data.viewActionKind || 'claimed-recovery'
   };
   if (data.cards?.length) {
     render(
@@ -360,14 +405,32 @@ function applyReconciledState(reconciled, { epoch = null } = {}) {
     return;
   }
   if (reconciled.kind === 'available') {
+    const showView = Boolean(reconciled.showViewAction && reconciled.cards?.length);
     setPortalReady({
       epoch,
-      showView: Boolean(reconciled.showViewAction && reconciled.cards?.length),
+      showView,
       cards: reconciled.cards || [],
       claimDate: reconciled.claimDate || null,
       nextClaimAt: reconciled.nextClaimAt || null,
       claimedAt: reconciled.claimedAt || null
     });
+    if (showView) {
+      setViewTodayVisible(true, {
+        label:
+          reconciled.viewLatestLabel ||
+          dailyCopy.viewLatestCta ||
+          (reconciled.mode === 'unlimited' ? 'View latest pack' : "View today’s cards")
+      });
+      pendingRecovery = {
+        cards: reconciled.cards || [],
+        nextClaimAt: reconciled.nextClaimAt || null,
+        claimDate: reconciled.claimDate || null,
+        claimedAt: reconciled.claimedAt || null,
+        claimId: reconciled.claimId || null,
+        requestId: reconciled.requestId || null,
+        viewActionKind: reconciled.viewActionKind || 'view-latest'
+      };
+    }
     return;
   }
   if (reconciled.kind === 'claimed') {
@@ -380,7 +443,9 @@ function applyReconciledState(reconciled, { epoch = null } = {}) {
         nextClaimAt: reconciled.nextClaimAt,
         cardsAwarded: reconciled.cards,
         claimDate: reconciled.claimDate,
-        claimedAt: reconciled.claimedAt
+        claimedAt: reconciled.claimedAt,
+        claimId: reconciled.claimId,
+        requestId: reconciled.requestId
       },
       {
         showView: Boolean(reconciled.cards.length),
@@ -464,6 +529,52 @@ async function initialize() {
 }
 
 async function recoverLostClaimResponse(openEpoch) {
+  // Prefer request-id recovery (never grants again). Falls back for pre-migration.
+  const byRequest = await recoverOpeningByRequestId({
+    ownerId: activeOwnerId,
+    allowIdempotentOpen: true
+  });
+  if (!ownershipEpochMatches(openEpoch)) {
+    return { recovered: false, reason: 'stale-epoch' };
+  }
+  if (byRequest.recovered && byRequest.opening?.cards?.length) {
+    const opening = byRequest.opening;
+    writeDailyReceipt(activeOwnerId, {
+      ownerId: activeOwnerId,
+      claimDate: opening.claimDate || easternClaimDate(),
+      status: 'pending_reveal',
+      nextClaimAt: opening.nextClaimAt,
+      claimedAt: opening.claimedAt,
+      claimId: opening.claimId,
+      requestId: opening.requestId,
+      cards: opening.cards,
+      generation: openEpoch.generation
+    });
+    clearPendingOpeningRequest(activeOwnerId);
+    const reconciled = {
+      kind: opening.mode === 'unlimited' ? 'available' : 'claimed',
+      available: opening.mode === 'unlimited',
+      cards: opening.cards,
+      showViewAction: true,
+      claimDate: opening.claimDate,
+      claimedAt: opening.claimedAt,
+      claimId: opening.claimId,
+      requestId: opening.requestId,
+      nextClaimAt: opening.nextClaimAt,
+      mode: opening.mode,
+      viewActionKind: opening.mode === 'unlimited' ? 'view-latest' : 'claimed-recovery',
+      viewLatestLabel:
+        opening.mode === 'unlimited' ? 'View latest pack' : "View today’s cards"
+    };
+    applyReconciledState(reconciled, { epoch: openEpoch });
+    status(
+      dailyCopy.recoveryStatus ||
+        'Your pack opening was recovered. View results without opening another pack.',
+      'success'
+    );
+    return { recovered: true, reconciled, via: byRequest.reason };
+  }
+
   const { status: daily, error } = await getDailyBoosterStatus();
   if (!ownershipEpochMatches(openEpoch)) {
     return { recovered: false, reason: 'stale-epoch' };
@@ -486,10 +597,13 @@ async function recoverLostClaimResponse(openEpoch) {
       status: 'pending_reveal',
       nextClaimAt: outcome.reconciled.nextClaimAt,
       claimedAt: outcome.reconciled.claimedAt,
+      claimId: outcome.reconciled.claimId,
+      requestId: outcome.reconciled.requestId,
       cards: outcome.reconciled.cards,
       generation: openEpoch.generation
     });
-    setPortalRecovery(outcome.reconciled, { epoch: openEpoch });
+    clearPendingOpeningRequest(activeOwnerId);
+    applyReconciledState(outcome.reconciled, { epoch: openEpoch });
     status(
       dailyCopy.recoveryStatus ||
         'Your pack was already claimed. Use View today’s cards to see the results.',
@@ -510,7 +624,11 @@ async function openPackFlow() {
   packLabel.textContent = READY_PACK_LABEL;
   const openEpoch = captureOwnershipEpoch();
   try {
-    const result = await openDailyBooster();
+    // Persist client request UUID before the RPC so lost responses stay recoverable.
+    const result = await openDailyBooster({
+      ownerId: activeOwnerId,
+      claimDate: easternClaimDate()
+    });
     if (!ownershipEpochMatches(openEpoch)) {
       status('Account changed while opening the pack. Refreshing…', 'error');
       clearStalePresentation();
@@ -519,7 +637,39 @@ async function openPackFlow() {
     }
 
     if (result?.alreadyClaimed) {
-      // Lost/duplicate response: never grant again — reconcile from server status only.
+      // Same-day daily slot already taken — never grant again.
+      const cards = normalizeDailyAwardCards(result.cards || result.cardsAwarded);
+      if (cards.length) {
+        writeDailyReceipt(activeOwnerId, {
+          ownerId: activeOwnerId,
+          claimDate: result.claimDate || easternClaimDate(),
+          status: 'pending_reveal',
+          nextClaimAt: result.nextClaimAt || null,
+          claimedAt: result.claimedAt || null,
+          claimId: result.claimId || null,
+          requestId: result.requestId || null,
+          cards,
+          generation: openEpoch.generation
+        });
+        clearPendingOpeningRequest(activeOwnerId);
+        setPortalRecovery(
+          {
+            cards,
+            nextClaimAt: result.nextClaimAt,
+            claimDate: result.claimDate,
+            claimedAt: result.claimedAt,
+            claimId: result.claimId,
+            requestId: result.requestId
+          },
+          { epoch: openEpoch }
+        );
+        status(
+          dailyCopy.recoveryStatus ||
+            'Your pack was already claimed. Use View today’s cards to see the results.',
+          'success'
+        );
+        return;
+      }
       const recovered = await recoverLostClaimResponse(openEpoch);
       if (!recovered.recovered) {
         if (recovered.reason === 'stale-epoch') {
@@ -539,7 +689,7 @@ async function openPackFlow() {
       return;
     }
 
-    const cards = normalizeDailyAwardCards(result?.cards);
+    const cards = normalizeDailyAwardCards(result?.cards || result?.cardsAwarded);
     if (!cards.length) throw new Error('No cards were returned from this pack.');
 
     // Persist receipt before animation so refresh/close can recover without re-claiming.
@@ -549,32 +699,68 @@ async function openPackFlow() {
       status: 'pending_reveal',
       nextClaimAt: result.nextClaimAt || null,
       claimedAt: result.claimedAt || null,
+      claimId: result.claimId || null,
+      requestId: result.requestId || result._clientRequestId || null,
       cards,
       generation: openEpoch.generation
     });
+    clearPendingOpeningRequest(activeOwnerId);
 
-    const title = dailyCopy.resultsTitle || "Here Are Today’s Free Daily Starlight Pack Results";
-    await playOpening(cards, title, { epoch: openEpoch, markComplete: true, mode: 'claim' });
+    const isReplay = Boolean(result?.idempotentReplay);
+    const title = isReplay
+      ? dailyCopy.replayResultsTitle || 'Cards already received today'
+      : dailyCopy.resultsTitle || "Here Are Today’s Free Daily Starlight Pack Results";
+    await playOpening(cards, title, {
+      epoch: openEpoch,
+      markComplete: true,
+      mode: isReplay ? 'replay' : 'claim'
+    });
     if (!ownershipEpochMatches(openEpoch)) {
       clearStalePresentation();
       await initialize();
       return;
     }
-    setPortalClaimed(
-      {
-        nextClaimAt: result.nextClaimAt,
-        cardsAwarded: cards,
+
+    if (result.mode === 'unlimited') {
+      setPortalReady({
+        epoch: openEpoch,
+        showView: true,
+        cards,
         claimDate: result.claimDate,
+        nextClaimAt: result.nextClaimAt,
         claimedAt: result.claimedAt
-      },
-      { showView: true, epoch: openEpoch, replay: false }
-    );
+      });
+      setViewTodayVisible(true, {
+        label: dailyCopy.viewLatestCta || 'View latest pack'
+      });
+      pendingRecovery = {
+        cards,
+        nextClaimAt: result.nextClaimAt,
+        claimDate: result.claimDate,
+        claimedAt: result.claimedAt,
+        claimId: result.claimId,
+        requestId: result.requestId,
+        viewActionKind: 'view-latest'
+      };
+    } else {
+      setPortalClaimed(
+        {
+          nextClaimAt: result.nextClaimAt,
+          cardsAwarded: cards,
+          claimDate: result.claimDate,
+          claimedAt: result.claimedAt,
+          claimId: result.claimId,
+          requestId: result.requestId
+        },
+        { showView: true, epoch: openEpoch, replay: isReplay }
+      );
+    }
     window.parent?.postMessage(
       { type: 'starlight-view-ready', view: 'daily', claimed: true },
       location.origin
     );
   } catch (error) {
-    // Ambiguous failure after a possible commit: check server before offering retry.
+    // Ambiguous failure after a possible commit: recover by request id / status — never new UUID.
     const recovered = await recoverLostClaimResponse(openEpoch);
     if (!recovered.recovered) {
       if (recovered.reason === 'status-error') {
@@ -647,10 +833,12 @@ async function retryStatusFlow() {
         status: 'pending_reveal',
         nextClaimAt: outcome.reconciled.nextClaimAt,
         claimedAt: outcome.reconciled.claimedAt,
+        claimId: outcome.reconciled.claimId,
+        requestId: outcome.reconciled.requestId,
         cards: outcome.reconciled.cards,
         generation: retryEpoch.generation
       });
-      setPortalRecovery(outcome.reconciled, { epoch: retryEpoch });
+      applyReconciledState(outcome.reconciled, { epoch: retryEpoch });
       status(
         dailyCopy.recoveryStatus ||
           'Your pack was already claimed. Use View today’s cards to see the results.',
@@ -674,7 +862,7 @@ async function viewTodayFlow() {
   setRetryStatusVisible(false);
   const viewEpoch = captureOwnershipEpoch();
   try {
-    // Reconcile with server immediately before reveal — never call open_daily_booster.
+    // Reconcile with server immediately before reveal — never open with a new request id.
     const { status: daily, error } = await getDailyBoosterStatus();
     if (!ownershipEpochMatches(viewEpoch)) {
       clearStalePresentation();
@@ -693,12 +881,15 @@ async function viewTodayFlow() {
       applyReconciledState(reconciled, { epoch: viewEpoch });
       return;
     }
-    // Claimed recovery and unlimited pending-receipt recovery both replay here.
+    // Claimed recovery, unlimited pending receipt, and View latest pack all replay here.
     if (!(reconciled.kind === 'claimed' || reconciled.showViewAction)) {
       applyReconciledState(reconciled, { epoch: viewEpoch });
       return;
     }
-    const title = dailyCopy.replayResultsTitle || 'Cards already received today';
+    const title =
+      reconciled.viewActionKind === 'view-latest'
+        ? dailyCopy.latestResultsTitle || 'Latest pack results'
+        : dailyCopy.replayResultsTitle || 'Cards already received today';
     await playOpening(reconciled.cards, title, {
       epoch: viewEpoch,
       markComplete: true,
@@ -709,29 +900,14 @@ async function viewTodayFlow() {
       await initialize();
       return;
     }
-    if (reconciled.kind === 'available') {
-      setPortalReady({
-        epoch: viewEpoch,
-        showView: true,
-        cards: reconciled.cards,
-        claimDate: reconciled.claimDate,
-        nextClaimAt: reconciled.nextClaimAt,
-        claimedAt: reconciled.claimedAt
-      });
-    } else {
-      setPortalClaimed(
-        {
-          nextClaimAt: reconciled.nextClaimAt,
-          cardsAwarded: reconciled.cards,
-          claimDate: reconciled.claimDate,
-          claimedAt: reconciled.claimedAt
-        },
-        { showView: true, epoch: viewEpoch, replay: true }
-      );
-    }
+    applyReconciledState(reconciled, { epoch: viewEpoch });
   } catch (error) {
     status(error.message || 'Could not show today’s cards.', 'error');
-    setViewTodayVisible(true);
+    setViewTodayVisible(true, {
+      label: pendingRecovery?.viewActionKind === 'view-latest'
+        ? dailyCopy.viewLatestCta || 'View latest pack'
+        : dailyCopy.viewTodayCta || "View today’s cards"
+    });
   } finally {
     isBusy = false;
   }
