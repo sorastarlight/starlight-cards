@@ -625,7 +625,31 @@ async function processEvent(env, payload, eventId, eventType) {
     },
     prefer: 'resolution=ignore-duplicates,return=representation'
   });
-  if (!inserted?.length) return;
+  if (!inserted?.length) {
+    // Same EventSub message id: finish durable delivery after a prior failure,
+    // but never re-grant delivered/ignored events.
+    const existingRows = await sb(
+      env,
+      `/rest/v1/twitch_reward_events?event_id=eq.${encodeURIComponent(eventId)}&select=event_id,status`
+    );
+    const existing = existingRows?.[0];
+    if (!existing) return;
+    if (existing.status === 'delivered' || existing.status === 'ignored') return;
+    await sb(env, `/rest/v1/twitch_reward_events?event_id=eq.${encodeURIComponent(eventId)}`, {
+      method: 'PATCH',
+      body: {
+        status: 'received',
+        error_message: null,
+        payload,
+        event_type: mappedType,
+        twitch_user_id: twitchUserId,
+        twitch_login: twitchLogin,
+        twitch_display_name: twitchDisplay,
+        twitch_reward_id: rewardId
+      },
+      prefer: 'return=minimal'
+    }).catch(() => {});
+  }
 
   const rules = await sb(
     env,
@@ -788,6 +812,51 @@ async function processEvent(env, payload, eventId, eventType) {
   }
 }
 
+/**
+ * Staff-triggered retry for a failed EventSub row. Reconstructs the original
+ * notification and re-enters processEvent (which refuses delivered/ignored ids).
+ */
+async function retryFailedRewardEvent(env, eventId) {
+  const id = String(eventId || '').trim();
+  if (!id) throw new Error('eventId is required');
+  const rows = await sb(
+    env,
+    `/rest/v1/twitch_reward_events?event_id=eq.${encodeURIComponent(id)}&select=*&limit=1`
+  );
+  const row = rows?.[0];
+  if (!row) throw new Error('Reward event not found.');
+  if (row.status === 'delivered') {
+    return { ok: true, status: 'delivered', skipped: true, reason: 'already_delivered' };
+  }
+  if (row.status === 'ignored') {
+    return { ok: true, status: 'ignored', skipped: true, reason: 'ignored' };
+  }
+  if (row.status !== 'failed' && row.status !== 'received') {
+    throw new Error(`Cannot retry events in status "${row.status}".`);
+  }
+  const payload = row.payload && typeof row.payload === 'object' ? row.payload : {};
+  const subscriptionType =
+    payload?.subscription?.type ||
+    (row.event_type === 'channel_points'
+      ? 'channel.channel_points_custom_reward_redemption.add'
+      : row.event_type === 'subscription'
+        ? 'channel.subscribe'
+        : row.event_type === 'follow'
+          ? 'channel.follow'
+          : '');
+  if (!subscriptionType) throw new Error('Stored event is missing a Twitch subscription type.');
+  await processEvent(env, payload, id, subscriptionType);
+  const refreshed = await sb(
+    env,
+    `/rest/v1/twitch_reward_events?event_id=eq.${encodeURIComponent(id)}&select=status,error_message&limit=1`
+  );
+  return {
+    ok: true,
+    status: refreshed?.[0]?.status || null,
+    error: refreshed?.[0]?.error_message || null
+  };
+}
+
 async function markEventSubRevoked(env, payload) {
   const status = String(payload?.subscription?.status || 'revoked');
   const subType = String(payload?.subscription?.type || '');
@@ -844,7 +913,7 @@ export default {
         return json({
           ok: missing.length === 0,
           service: 'starlight-twitch-worker',
-          version: '1.1.2',
+          version: '1.1.3',
           missingConfig: missing
         }, missing.length ? 503 : 200);
       }
@@ -865,6 +934,11 @@ export default {
       if (url.pathname === '/admin/custom-rewards' && request.method === 'POST') {
         await validateAdmin(env, request);
         return json({ rewards: await getCustomRewards(env) });
+      }
+      if (url.pathname === '/admin/events/retry' && request.method === 'POST') {
+        await validateAdmin(env, request);
+        const body = await request.json().catch(() => ({}));
+        return json(await retryFailedRewardEvent(env, body.eventId || body.event_id));
       }
       if (url.pathname === '/viewer/subscription-check' && request.method === 'POST') {
         return viewerSubscriptionCheck(env, request);
