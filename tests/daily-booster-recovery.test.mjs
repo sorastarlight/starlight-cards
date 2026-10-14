@@ -360,6 +360,7 @@ test('page wiring: status retry, ownership clear, and replay never re-grant', as
   assert.doesNotMatch(viewFn.slice(0, 1400), /applyAwardedCardsToLocalStore/);
   assert.doesNotMatch(viewFn.slice(0, 1400), /notifyShellEconomyChanged/);
   assert.match(viewFn, /mode:\s*['"]replay['"]/);
+  assert.match(viewFn, /reconciled\.kind === 'claimed' \|\| reconciled\.showViewAction/);
   assert.match(page, /notifyShellCollectionReconcile/);
   assert.match(page, /presentationMode:\s*isReplay\s*\?\s*['"]replay['"]/);
   assert.match(page, /Already received/);

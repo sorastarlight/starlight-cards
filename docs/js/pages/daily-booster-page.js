@@ -689,7 +689,12 @@ async function viewTodayFlow() {
       todayClaimDate: easternClaimDate(),
       epoch: viewEpoch
     });
-    if (reconciled.kind !== 'claimed' || !reconciled.cards.length) {
+    if (!reconciled.cards?.length) {
+      applyReconciledState(reconciled, { epoch: viewEpoch });
+      return;
+    }
+    // Claimed recovery and unlimited pending-receipt recovery both replay here.
+    if (!(reconciled.kind === 'claimed' || reconciled.showViewAction)) {
       applyReconciledState(reconciled, { epoch: viewEpoch });
       return;
     }
@@ -704,15 +709,26 @@ async function viewTodayFlow() {
       await initialize();
       return;
     }
-    setPortalClaimed(
-      {
-        nextClaimAt: reconciled.nextClaimAt,
-        cardsAwarded: reconciled.cards,
+    if (reconciled.kind === 'available') {
+      setPortalReady({
+        epoch: viewEpoch,
+        showView: true,
+        cards: reconciled.cards,
         claimDate: reconciled.claimDate,
+        nextClaimAt: reconciled.nextClaimAt,
         claimedAt: reconciled.claimedAt
-      },
-      { showView: true, epoch: viewEpoch, replay: true }
-    );
+      });
+    } else {
+      setPortalClaimed(
+        {
+          nextClaimAt: reconciled.nextClaimAt,
+          cardsAwarded: reconciled.cards,
+          claimDate: reconciled.claimDate,
+          claimedAt: reconciled.claimedAt
+        },
+        { showView: true, epoch: viewEpoch, replay: true }
+      );
+    }
   } catch (error) {
     status(error.message || 'Could not show today’s cards.', 'error');
     setViewTodayVisible(true);

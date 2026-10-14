@@ -168,25 +168,23 @@ export function reconcileDailyRecoveryState({
     !receipt.corrupt &&
     String(receipt.ownerId) === String(ownerId) &&
     String(receipt.claimDate) === claimDate;
-  const pendingLocalCards =
-    receiptOk && receipt.status === 'pending_reveal'
-      ? normalizeDailyAwardCards(receipt.cards)
-      : [];
+  const localReplayCards = receiptOk ? normalizeDailyAwardCards(receipt.cards) : [];
+  const pendingReveal = Boolean(receiptOk && receipt.status === 'pending_reveal');
 
   // Unlimited (and other available) modes never expose cardsAwarded on status.
-  // Keep pack availability, but still offer View for a same-day pending receipt.
+  // Keep pack availability, but still offer View for same-day receipt results.
   if (status.available) {
     return {
       kind: 'available',
       available: true,
       disabled: false,
       mode: status.mode || null,
-      cards: pendingLocalCards,
-      showViewAction: pendingLocalCards.length > 0,
-      pendingReveal: pendingLocalCards.length > 0,
+      cards: localReplayCards,
+      showViewAction: localReplayCards.length > 0,
+      pendingReveal,
       claimDate,
       nextClaimAt: status.nextClaimAt || null,
-      source: pendingLocalCards.length ? 'local-receipt' : 'none',
+      source: localReplayCards.length ? 'local-receipt' : 'none',
       receiptOk: Boolean(receiptOk)
     };
   }
@@ -194,9 +192,8 @@ export function reconcileDailyRecoveryState({
   const serverCards = normalizeDailyAwardCards(status.cardsAwarded);
 
   // Midnight / wrong-day local hint: ignore for display, keep server truth.
-  const localCards = receiptOk ? normalizeDailyAwardCards(receipt.cards) : [];
+  const localCards = localReplayCards;
   const cards = serverCards.length ? serverCards : localCards;
-  const pendingReveal = Boolean(receiptOk && receipt.status === 'pending_reveal');
   const showViewAction = cards.length > 0 && (pendingReveal || !receiptOk || receipt.status !== 'complete');
 
   return {
