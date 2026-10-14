@@ -17,16 +17,15 @@ Canonical guidance: `AGENTS.md`. Active milestone: **V1.0 — Foundation**, plus
 
 ## Current task
 
-1. Commit/push opening-recovery client + migration files; verify GitHub Pages assets.
-2. Controlled QA smoke on live Daily Pack (unlimited open → lost-response replay path / View latest; no mode change).
-3. Continue overhaul roadmap slice 2: shared experience and navigation polish.
+Finish shipping home **Featured sets** (real catalog strip), then continue slice 2 (nav/token consistency) and authenticated Daily Pack QA smoke (needs QA login).
 
 ## Validation evidence
 
-- `npm run check`: 214 pass (pre-push).
-- Local DB: `starlight_test.run_opening_recovery_suite: PASS`.
-- Concurrency: session_a grant + session_b `idempotentReplay`, shared claim_id.
-- Production: both `open_daily_booster` overloads; anon EXECUTE false; `get_my_daily_booster_opening` present.
+- Deployed commit: `df258b2` on `main` (GitHub Pages).
+- Live assets: recovery helpers present on `cards.sorastarlight.net`.
+- `npm run check`: 214 pass.
+- Local DB suite PASS; two-session concurrency PASS.
+- Production: both `open_daily_booster` overloads; anon EXECUTE false; mode still `unlimited`.
 
 ## Unresolved / watch
 

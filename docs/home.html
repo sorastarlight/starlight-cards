@@ -9,7 +9,7 @@
 <script src="js/browser-performance.js?v=1.0.0" defer></script>
 <link rel="stylesheet" href="css/starlight-public.css?v=1.2.1">
 <link rel="stylesheet" href="css/pages/public-page.css?v=2.1.0">
-<link rel="stylesheet" href="css/pages/home.css?v=3.1.0">
+<link rel="stylesheet" href="css/pages/home.css?v=3.2.0">
 <link rel="stylesheet" href="css/qol-ui.css?v=94.2.4">
 </head>
 <body>
@@ -42,6 +42,19 @@
       <a class="st-btn st-btn--primary" href="binder?view=daily" data-shell-view="daily" data-content="home.primaryCta">✨ Open Free Daily Starlight Pack</a>
       <a class="st-btn st-btn--ghost" href="binder?view=binder" data-shell-view="binder" data-content="home.secondaryCta">🗂️ Browse Card Gallery</a>
     </div>
+
+    <section class="st-home-featured" aria-labelledby="homeFeaturedTitle">
+      <div class="section-head">
+        <div>
+          <p class="st-eyebrow">From the binder</p>
+          <h2 class="st-section-title" id="homeFeaturedTitle">Featured sets</h2>
+        </div>
+        <a class="st-btn st-btn--ghost" href="binder?view=binder" data-shell-view="binder">Browse all cards</a>
+      </div>
+      <div id="homeFeaturedSets" class="st-home-set-grid" aria-live="polite">
+        <div class="st-empty">Loading featured Starlight sets…</div>
+      </div>
+    </section>
 
     <section class="st-home-promos" aria-label="Explore Starlight">
       <h2 class="st-section-title st-section-title--sm">Explore the Starlight Card Hub</h2>
@@ -112,6 +125,7 @@
 </main>
 <script type="module" src="js/pages/website-content-hydrate-page.js?v=1.2"></script>
 <script type="module" src="js/home-spotlight.js?v=2.0.0"></script>
+<script type="module" src="js/home-featured-sets.js?v=1.0.0"></script>
 <script type="module" src="js/home-news.js?v=2.0.0"></script>
 <script src="js/shared-ui.js?v=1.6.24"></script>
 <script src="js/qol-ui.js?v=94.2.4" defer></script>
