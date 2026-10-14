@@ -44,6 +44,8 @@ test('admin twitch reward modals use shared modal controllers only', async () =>
   assert.match(page, /testRuleModalController\.close/);
   assert.doesNotMatch(page, /\$\('ruleModal'\)\.classList\.(add|remove)\('hidden'\)/);
   assert.doesNotMatch(page, /\$\('testRuleModal'\)\.classList\.(add|remove)\('hidden'\)/);
+  assert.match(page, /Revoked \/ Sync again/);
+  assert.match(page, /Working \/ Online\$\{version\}/);
 });
 
 test('rankings RPC migration exposes equipped avatar frames', async () => {

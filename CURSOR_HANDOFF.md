@@ -11,49 +11,48 @@ Canonical guidance: `AGENTS.md`. Active milestone: **V1.0 — Foundation**, plus
 ## Completed
 
 ### Reward integrity — opening recovery
-- Migration `20261014080000_daily_booster_opening_recovery` **applied to production**. Live mode left at **unlimited**.
-- Client recovery deployed (`df258b2`). Isolated Postgres + two-session concurrency PASS.
+- Migration `20261014080000` **on production**; mode still **unlimited**.
+- Client recovery `df258b2`. Isolated DB + two-session concurrency PASS.
 - Docs: `docs/DAILY_OPENING_RECOVERY.md`.
 
 ### Shared experience — home featured sets
-- Home **Featured sets** strip (`8c66c6b`), verified live.
+- `8c66c6b` live.
 
-### Pack opening — Reveal All / Skip + sound mute
-- `v1.5.18` Reveal All/Skip (`c555138`); `v1.5.19` Sound/Muted toggle (`b3b8695`).
-- **Live verified:** `reward-reveal.js` serves `1.5.19` with `skipToResults` + `st-r3-sound`.
+### Pack opening fanfare
+- Reveal `v1.5.19` live: Reveal All/Skip + Sound mute (`c555138`, `b3b8695`).
+- Entry cache-busts: `daily-booster-page.js?v=1.7.1` **live verified**.
 
-### Collection — progress copy + favorites filter fix
-- Set progress summaries + duplicates exchangeable-copy explanation (`e582162`).
-- `app.js` passes `isFavorite` into shared `filterCardList`.
-- Reveal entry HTML cache-busts bumped (deploy in progress / verify after Pages finishes).
+### Collection / progression
+- Set “X of Y collected” summaries + duplicates exchangeable-copy copy (`e582162`) **live**.
+- Favorites-only filter bugfix (`isFavorite` passed into shared filters).
+- Economy audit: `convert_selected_duplicates_to_star_bits` uses `greatest(quantity - 1, 0)` — one copy always protected. No odds/monetization changes.
+
+### Twitch worker hardening
+- Worker **v1.1.2 deployed** to Cloudflare (`starlight-twitch-integration`): ±10m timestamp check, signature helper, revocation → `twitch_integration_config.eventsub_status`.
+- Health: `https://starlight-twitch-integration.fetkun.workers.dev/health` → `ok`, `1.1.2`.
+- Admin Twitch pills: show worker version + “Revoked / Sync again” (pending Pages).
 
 ### Deploy hygiene
-- Pages `build_type=workflow` (Actions-only). Workflow concurrency queues instead of cancelling mid-deploy.
-
-### Twitch EventSub hardening (code ready; worker deploy pending)
-- Timestamp freshness (±10m) + shared signature helper + revocation persists `eventsub_status` (`cloudflare-worker` v1.1.2).
-- Tests: `tests/twitch-eventsub-verify.test.mjs`.
+- Pages `build_type=workflow`; concurrency queues deploys.
 
 ## Current task
 
-1. Confirm Pages deploy of `e582162` (daily-booster `v=1.7.1`).
-2. Deploy Cloudflare Twitch worker v1.1.2 when Wrangler credentials available.
-3. Continue collection usability / a11y; Twitch durable retry/reconciliation next.
-4. Authenticated Daily Pack smoke still needs QA credentials.
+Continue a11y/perf (keyboard/zoom/slow-network spot checks), Twitch durable retry/reconciliation if gaps remain, binder/grid usability polish. Authenticated Daily Pack smoke still needs QA credentials.
 
 ## Validation evidence
 
-- Commits: `df258b2`, `8c66c6b`, `c555138`, `b3b8695`, `e582162` (+ pending Twitch worker commit).
-- Live reveal `1.5.19` confirmed.
-- `npm run check`: 222 pass.
-- Production daily mode unchanged (unlimited).
+- Commits: `df258b2`, `8c66c6b`, `c555138`, `b3b8695`, `e582162`, `4eee61e` (+ pending admin Twitch UI).
+- Live: reveal `1.5.19`, daily page `1.7.1`, card-filter `formatSetProgressExplanation`.
+- Worker live `1.1.2`.
+- `npm run check`: 222 pass (pre-admin-UI commit).
+- Production daily mode unchanged.
 
 ## Unresolved / watch
 
 - Authenticated live Daily Pack smoke blocked without QA account credentials.
 - Historical unlimited openings before migration still unrecoverable.
 - Do not install `starlight_test` on production.
-- Worker changes are not live until Cloudflare deploy.
+- Overhaul **not complete**: remaining binder UX polish, Twitch retry/reconciliation depth, full a11y/perf matrix.
 
 ## Repository map
 
