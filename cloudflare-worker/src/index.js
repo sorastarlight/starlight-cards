@@ -60,6 +60,21 @@ function safeEqual(a, b) {
   return r === 0;
 }
 
+/** Twitch EventSub replay window (docs recommend rejecting stale timestamps). */
+export const EVENTSUB_MAX_AGE_MS = 10 * 60 * 1000;
+
+export function isEventSubTimestampFresh(timestamp, nowMs = Date.now(), maxAgeMs = EVENTSUB_MAX_AGE_MS) {
+  const parsed = Date.parse(String(timestamp || ''));
+  if (!Number.isFinite(parsed)) return false;
+  return Math.abs(Number(nowMs) - parsed) <= maxAgeMs;
+}
+
+export async function verifyEventSubSignature(secret, messageId, timestamp, body, signature) {
+  if (!secret || !messageId || !timestamp || !signature) return false;
+  const expected = `sha256=${await hmacHex(secret, `${messageId}${timestamp}${body}`)}`;
+  return safeEqual(String(signature), expected);
+}
+
 async function sb(env, path, { method = 'GET', body, token, prefer } = {}) {
   const headers = {
     apikey: env.SUPABASE_SERVICE_ROLE_KEY,
@@ -773,6 +788,24 @@ async function processEvent(env, payload, eventId, eventType) {
   }
 }
 
+async function markEventSubRevoked(env, payload) {
+  const status = String(payload?.subscription?.status || 'revoked');
+  const subType = String(payload?.subscription?.type || '');
+  try {
+    await sb(env, '/rest/v1/twitch_integration_config?id=eq.true', {
+      method: 'PATCH',
+      body: {
+        eventsub_status: status || 'revoked',
+        updated_at: new Date().toISOString()
+      },
+      prefer: 'return=minimal'
+    });
+  } catch (error) {
+    console.warn('[EventSub] failed to persist revocation status', error);
+  }
+  console.warn('[EventSub] subscription revoked', { status, subType });
+}
+
 async function webhook(env, request) {
   const id = request.headers.get('Twitch-Eventsub-Message-Id') || '';
   const ts = request.headers.get('Twitch-Eventsub-Message-Timestamp') || '';
@@ -780,11 +813,19 @@ async function webhook(env, request) {
   const type = request.headers.get('Twitch-Eventsub-Message-Type') || '';
   const eventType = request.headers.get('Twitch-Eventsub-Subscription-Type') || '';
   const body = await request.text();
-  const expected = `sha256=${await hmacHex(env.EVENTSUB_SECRET, id + ts + body)}`;
-  if (!safeEqual(signature, expected)) return new Response('Invalid signature', { status: 403 });
+  if (!(await verifyEventSubSignature(env.EVENTSUB_SECRET, id, ts, body, signature))) {
+    return new Response('Invalid signature', { status: 403 });
+  }
+  if (!isEventSubTimestampFresh(ts)) {
+    return new Response('Stale timestamp', { status: 403 });
+  }
   const payload = JSON.parse(body);
   if (type === 'webhook_callback_verification') {
     return new Response(payload.challenge, { headers: { 'content-type': 'text/plain' } });
+  }
+  if (type === 'revocation') {
+    await markEventSubRevoked(env, payload);
+    return new Response('', { status: 204 });
   }
   if (type === 'notification') {
     await processEvent(env, payload, id, eventType);
@@ -803,7 +844,7 @@ export default {
         return json({
           ok: missing.length === 0,
           service: 'starlight-twitch-worker',
-          version: '1.1.1',
+          version: '1.1.2',
           missingConfig: missing
         }, missing.length ? 503 : 200);
       }

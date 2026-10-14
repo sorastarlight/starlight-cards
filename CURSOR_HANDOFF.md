@@ -21,26 +21,31 @@ Canonical guidance: `AGENTS.md`. Active milestone: **V1.0 — Foundation**, plus
 ### Pack opening — Reveal All / Skip + sound mute
 - `v1.5.18` Reveal All/Skip (`c555138`); `v1.5.19` Sound/Muted toggle (`b3b8695`).
 - **Live verified:** `reward-reveal.js` serves `1.5.19` with `skipToResults` + `st-r3-sound`.
-- Entry HTML cache-busts bumped to pull updated reveal imports (pending deploy).
 
 ### Collection — progress copy + favorites filter fix
-- Shared binder summary includes set “X of Y collected” progress.
-- Duplicates tab explains exchangeable copies (one copy stays collected).
-- `app.js` now passes `isFavorite` into shared `filterCardList` (favorites-only was silently ignored).
+- Set progress summaries + duplicates exchangeable-copy explanation (`e582162`).
+- `app.js` passes `isFavorite` into shared `filterCardList`.
+- Reveal entry HTML cache-busts bumped (deploy in progress / verify after Pages finishes).
 
 ### Deploy hygiene
-- GitHub Pages `build_type` switched to **workflow** (Actions-only) to stop legacy+Actions dual-deploy races.
-- Deploy workflow concurrency set to queue (`cancel-in-progress: false`).
+- Pages `build_type=workflow` (Actions-only). Workflow concurrency queues instead of cancelling mid-deploy.
+
+### Twitch EventSub hardening (code ready; worker deploy pending)
+- Timestamp freshness (±10m) + shared signature helper + revocation persists `eventsub_status` (`cloudflare-worker` v1.1.2).
+- Tests: `tests/twitch-eventsub-verify.test.mjs`.
 
 ## Current task
 
-Finish deploying cache-bust + collection progress slice; continue collection/binder usability, then admin/Twitch and a11y. Authenticated Daily Pack smoke still needs QA credentials.
+1. Confirm Pages deploy of `e582162` (daily-booster `v=1.7.1`).
+2. Deploy Cloudflare Twitch worker v1.1.2 when Wrangler credentials available.
+3. Continue collection usability / a11y; Twitch durable retry/reconciliation next.
+4. Authenticated Daily Pack smoke still needs QA credentials.
 
 ## Validation evidence
 
-- Commits: `df258b2`, `8c66c6b`, `c555138`, `b3b8695` (+ pending collection/cache-bust).
-- Live reveal `1.5.19` confirmed on cards.sorastarlight.net.
-- `npm run check`: 220 pass.
+- Commits: `df258b2`, `8c66c6b`, `c555138`, `b3b8695`, `e582162` (+ pending Twitch worker commit).
+- Live reveal `1.5.19` confirmed.
+- `npm run check`: 222 pass.
 - Production daily mode unchanged (unlimited).
 
 ## Unresolved / watch
@@ -48,6 +53,7 @@ Finish deploying cache-bust + collection progress slice; continue collection/bin
 - Authenticated live Daily Pack smoke blocked without QA account credentials.
 - Historical unlimited openings before migration still unrecoverable.
 - Do not install `starlight_test` on production.
+- Worker changes are not live until Cloudflare deploy.
 
 ## Repository map
 
@@ -55,5 +61,6 @@ Finish deploying cache-bust + collection progress slice; continue collection/bin
 | --- | --- |
 | `docs/` | Production website / GitHub Pages root |
 | `docs/js/reward-reveal.js` | Canonical pack/reveal presentation engine |
+| `cloudflare-worker/` | Twitch EventSub / OAuth worker |
 | `supabase/migrations/` | Forward-only schema/policy migrations |
 | `scripts/`, `tests/` | Validation harness + isolated SQL suites |
