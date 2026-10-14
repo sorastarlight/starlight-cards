@@ -48,6 +48,11 @@ test('admin twitch reward modals use shared modal controllers only', async () =>
   assert.match(page, /Working \/ Online\$\{version\}/);
   assert.match(page, /\/admin\/events\/retry/);
   assert.match(page, /retry-event/);
+  assert.match(page, /canRetryEvent/);
+  assert.match(page, /renderPipelineDiagnostics/);
+  assert.match(page, /missingConfig/);
+  assert.match(page, /grantNoteForEvent/);
+  assert.match(page, /copy-event-id/);
 });
 
 test('rankings RPC migration exposes equipped avatar frames', async () => {

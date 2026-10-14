@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="css/style.css?v=1.0.2">
   <link rel="stylesheet" href="css/shared-ui.css?v=1.6.16">
   <link rel="stylesheet" href="css/pages/admin-shell.css?v=1.0.0">
-  <link rel="stylesheet" href="css/pages/admin-twitch.css?v=1.2.0">
+  <link rel="stylesheet" href="css/pages/admin-twitch.css?v=1.2.1">
   <link rel="stylesheet" href="css/qol-ui.css?v=94.2.8">
   <script src="js/browser-performance.js?v=1.0.0" defer></script>
 </head>
@@ -68,10 +68,12 @@
               <button class="btn admin-btn admin-btn--primary" id="saveWorker">Save URL</button>
               <button class="btn secondary admin-btn" id="testWorker">Test Connection</button>
             </div>
+            <p id="workerHealthDetail" class="field-note worker-health-detail" aria-live="polite"></p>
           </div>
           <div class="panel">
             <h2>Broadcaster &amp; EventSub</h2>
             <div id="broadcasterState" class="muted">Not connected.</div>
+            <div id="pipelineDiagnostics" class="pipeline-diagnostics muted" hidden></div>
             <div class="actions space-top-14">
               <button class="btn admin-btn admin-btn--primary" id="connectBroadcaster">Connect Broadcaster</button>
               <button class="btn secondary admin-btn" id="syncEventSub">Sync EventSub</button>
@@ -277,7 +279,7 @@
     </div>
   </div>
 
-  <script type="module" src="js/pages/admin-twitch-page.js?v=1.4.2"></script>
+  <script type="module" src="js/pages/admin-twitch-page.js?v=1.4.3"></script>
   <script src="js/shared-ui.js?v=1.6.16"></script>
   <script src="js/qol-ui.js?v=94.2.8" defer></script>
 </body>

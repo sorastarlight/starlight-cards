@@ -10,44 +10,41 @@ Continue from this Games folder clone of `https://github.com/sorastarlight/starl
 
 | Asset | Live value |
 | --- | --- |
-| `reward-reveal.js` | **1.5.21** (Skip/Sound/reduced-motion + premium art fallback + contrast CSS) |
+| `reward-reveal.js` | **1.5.21** |
 | `daily-booster-page.js` | **1.7.3** |
-| `app-shell.js` | **1.8.13** (`defaultShellView` → Card Gallery) |
+| `app-shell.js` | **1.8.13** (Card Gallery default) |
 | `cloud-collection.js` / `app.js` | **1.4.4** / **1.9.25** |
-| `card-tile.js` | **1.0.1** (`galleryCardAriaLabel`) |
-| `starlight-perspective-card.js` | **1.0.1** (`bindImageFallback`) |
-| `card-filters.css` | **1.1.5** (sticky + contrast/`focus-visible`) |
-| `shared-ui.css` | **1.6.25** (`prefers-contrast` / `forced-colors`) |
+| `card-tile.js` | **1.0.1** — live aria `View uncollected card NNN` |
+| `starlight-perspective-card.js` | **1.0.1** art fallback |
+| `card-filters.css` / `shared-ui.css` | **1.1.5** / **1.6.25** contrast + focus |
 | Twitch worker `/health` | **1.1.3** ok |
-| `admin-twitch-page.js` | **1.4.2** |
+| `admin-twitch-page.js` | pending **1.4.3** (pipeline diag, grant notes, received retry, health detail) |
 
-Deployed commit includes `db9ed4d`. Production daily mode still **unlimited**. Opening recovery migration applied earlier.
+Production daily mode still **unlimited**. Opening recovery migration applied earlier.
 
 ### A11y / perf evidence
 
-- Zoom ~200% (640×480 @ 2×): binder filters wrap; set progress readable.
-- Broken art: missing URL recovers to card back (`fallbackApplied=true`) — local browser.
-- Slow network (~50 KB/s, 800 ms RTT): gallery DCL ~1.7 s; filters + grid usable.
-- Synthetic 400-tile markup+mount ~10 ms; live catalog still small (~12 unique / 24 shown).
+- Zoom ~200%: filters wrap; set progress readable.
+- Broken art → card back (local).
+- Slow network (~50 KB/s): gallery usable (~1.7 s DCL).
+- Synthetic 400-tile render ~10 ms.
 
 ## Completed this overhaul push
 
 1. Reward integrity — recovery + isolated DB/concurrency.
 2. Home featured sets.
 3. Reveal fanfare — Reveal All/Skip, mute, reduced-motion.
-4. Collection — set progress, favorites filter, duplicate copy protection; Star Bits keeps one copy.
-5. Twitch — timestamp freshness, revocation, failed-event resume + admin Retry; worker 1.1.3.
-6. Deploy — Pages Actions-only; Node 22 + deploy-pages v5.
-7. A11y/perf — uncollected aria, zoom, art fallback, contrast/forced-colors, slow-network + large-grid stress.
+4. Collection — set progress, favorites, copy protection.
+5. Twitch — EventSub harden + admin reconciliation visibility (1.4.3).
+6. Deploy hygiene + a11y/perf matrix (zoom, contrast, fallbacks, slow-net).
 
-## Current task / blockers
+## Blocker (overhaul not complete)
 
-- Authenticated Daily Pack open/replay smoke (**needs QA credentials** — do not invent access).
-- Optional deeper Twitch reconciliation UI beyond admin Retry.
-- Overhaul **not complete** while authenticated reward smoke remains unverified.
+**Authenticated Daily Pack open/replay smoke needs QA credentials.** No secrets/credentials are in agent stores. Provide a dedicated QA account (or test JWT flow) to finish live reward-integrity smoke. Do not invent access.
+
+Optional later: Helix subscription inventory vs rules (M/L).
 
 ## Notes
 
-- `binder.html` defaults to Card Gallery; `?view=` still overrides.
-- Uncollected gallery cards announce `View uncollected card NNN`.
 - Do not install `starlight_test` on production.
+- Overhaul **not complete** until authenticated Daily Pack smoke passes.
