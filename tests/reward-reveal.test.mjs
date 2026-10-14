@@ -188,8 +188,8 @@ test('locks the approved reveal presentation and motion baseline', async () => {
   const stylesheet = await readFile(new URL('../docs/css/reward-reveal.css', import.meta.url), 'utf8');
   const contractHash = createHash('sha256').update(normalizeMotionContract(stylesheet)).digest('hex');
 
-  assert.equal(REVEAL_PRESENTATION_VERSION, '1.5.19');
-  assert.match(stylesheet, /Approved reveal presentation baseline: v1\.5\.19/);
+  assert.equal(REVEAL_PRESENTATION_VERSION, '1.5.20');
+  assert.match(stylesheet, /Approved reveal presentation baseline: v1\.5\.20/);
   assert.equal(contractHash, '15a418208b0fe1d208ab050955c7254722d2e80a884d84a92ac57ef2af6c8377');
   assert.match(stylesheet, /\.st-r3-overlay\.is-embed-anchored/);
   assert.match(stylesheet, /\.st-r3-skip-bar/);
@@ -258,7 +258,7 @@ test('keeps every production reward entry point on the canonical reveal engine',
   ].map(file => readFile(new URL(`../docs/js/pages/${file}`, import.meta.url), 'utf8')));
 
   consumers.forEach(source => {
-    assert.match(source, /reward-reveal\.js\?v=1\.5\.19/);
+    assert.match(source, /reward-reveal\.js\?v=1\.5\.20/);
     assert.match(source, /revealRewardSequence\s*\(/);
     assert.doesNotMatch(source, /@keyframes|stR3CardSpin|stR3PackTop/);
   });
@@ -297,6 +297,14 @@ test('persists in-reveal sound mute without touching inventory APIs', () => {
   assert.equal(store.get('sora-starlight-card-binder-v7-sfx'), 'off');
   setSoundEffectsEnabled(win, true);
   assert.equal(soundEffectsEnabled(win), true);
+});
+
+test('surfaces Reveal All under prefers-reduced-motion without granting inventory', async () => {
+  const script = await readFile(new URL('../docs/js/reward-reveal.js', import.meta.url), 'utf8');
+  assert.match(script, /prefers-reduced-motion: reduce/);
+  assert.match(script, /Reduced motion is on/);
+  assert.match(script, /prefersReducedMotion && rewards\.length > 1/);
+  assert.doesNotMatch(script, /prefersReducedMotion[\s\S]{0,200}\b(open_daily_booster|grant|rpc\()/);
 });
 
 test('wires a header sound toggle that only stops audio when muted', async () => {

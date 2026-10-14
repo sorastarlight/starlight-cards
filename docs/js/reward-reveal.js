@@ -247,7 +247,7 @@ function acquireRevealViewportLock(doc) {
   };
 }
 
-export const REVEAL_PRESENTATION_VERSION = '1.5.19';
+export const REVEAL_PRESENTATION_VERSION = '1.5.20';
 
 const REVEAL_STYLESHEET_ID = `starlight-reveal-v${REVEAL_PRESENTATION_VERSION.replace(/\./g, '')}`;
 const REVEAL_STYLESHEET_URL = new URL(
@@ -1030,8 +1030,25 @@ export async function revealRewardSequence(cards = [], options = {}) {
       focusControl(packButton);
     }
 
+    const prefersReducedMotion = Boolean(
+      win.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
+    );
+    if (prefersReducedMotion && rewards.length > 1) {
+      skipBar.hidden = false;
+      revealAllButton.disabled = false;
+      skipButton.disabled = false;
+      liveStatus.textContent =
+        revealCopy.reducedMotionHint
+        || 'Reduced motion is on. Use Reveal All or Skip to results to finish without the full ritual.';
+      focusControl(revealAllButton);
+    }
+
     if (normalizedOptions.autoOpen) {
       win.requestAnimationFrame(() => {
+        if (prefersReducedMotion && rewards.length > 1) {
+          skipToResults({ openPackFirst: true }).catch(() => {});
+          return;
+        }
         openPack().catch(() => {});
       });
     }
