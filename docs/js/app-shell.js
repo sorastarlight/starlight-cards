@@ -27,7 +27,7 @@ import {
   shouldReenterLoadingOnFrameLoad
 } from './shell-view-readiness.js';
 
-const SHELL_BUILD = '94.5.5';
+const SHELL_BUILD = '94.5.6';
 const VIEW_READY_TIMEOUT_MS = 6500;
 const MAX_VIEW_RETRIES = 1;
 const SFX_KEY = 'sora-starlight-card-binder-v7-sfx';
@@ -269,17 +269,17 @@ function loadEmbeddedView(route,{force=false,resetRetry=false}={}){
     let liveToken='';
     try{ liveToken=new URL(currentHref).searchParams.get('shellLoad')||''; }catch{ /* ignore */ }
     currentLoadToken=liveToken||Date.now();
+    const adoptedToken=currentLoadToken;
     setViewState('loading');
     frame.style.height='720px';
     frame.setAttribute('scrolling','no');
     frame.dataset.route=route;
     armReadyTimeout(route,currentLoadToken);
-    requestEmbeddedReady();
-    // Cached embeds may not listen for request-ready; finish immediately when the
-    // restored document is already in embedded mode.
-    try{
-      const child=frame.contentDocument;
-      if(child?.documentElement?.classList?.contains('starlight-embedded')){
+    const finishRestoredEmbed=()=>{
+      if(route!==currentRoute||String(currentLoadToken)!==String(adoptedToken))return true;
+      try{
+        const child=frame.contentDocument;
+        if(!child?.documentElement?.classList?.contains('starlight-embedded'))return false;
         const height=Math.max(
           child.documentElement?.scrollHeight||0,
           child.body?.scrollHeight||0,
@@ -289,8 +289,27 @@ function loadEmbeddedView(route,{force=false,resetRetry=false}={}){
           { view: route, loadToken: currentLoadToken, height },
           { origin: location.origin, source: frame.contentWindow }
         );
+        return true;
+      }catch{
+        return false;
       }
-    }catch{ /* ignore */ }
+    };
+    requestEmbeddedReady();
+    if(!finishRestoredEmbed()){
+      const onLoad=()=>{
+        requestEmbeddedReady();
+        finishRestoredEmbed();
+      };
+      frame.addEventListener('load',onLoad,{once:true});
+      let tries=0;
+      const poll=window.setInterval(()=>{
+        tries+=1;
+        if(finishRestoredEmbed()||tries>=25){
+          window.clearInterval(poll);
+          frame.removeEventListener('load',onLoad);
+        }
+      },40);
+    }
     return;
   }
 
