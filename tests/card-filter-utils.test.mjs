@@ -7,6 +7,7 @@ import {
   cardDisplayNumber,
   filterCardList,
   formatBinderOwnedPill,
+  formatSetProgressExplanation,
   resolveBinderBrowseList
 } from '../docs/js/card-filter-utils.js';
 
@@ -148,6 +149,31 @@ test('formatBinderOwnedPill stays honest for missing view', () => {
   assert.equal(formatBinderOwnedPill({ shown: 5, owned: 0, view: 'missing' }), 'Showing 5 not collected');
   assert.equal(formatBinderOwnedPill({ shown: 12, owned: 8, view: 'all' }), 'Collected: 8 / 12');
   assert.equal(formatBinderOwnedPill({ shown: 4, owned: 4, view: 'collected' }), 'Collected in view: 4');
+  assert.equal(formatBinderOwnedPill({ shown: 3, owned: 3, view: 'duplicates' }), 'Duplicates in view: 3');
+});
+
+test('resolveBinderBrowseList explains set collection progress', () => {
+  const browse = resolveBinderBrowseList(catalog, {
+    q: '',
+    series: 'Rising Star',
+    rarity: 'All Rarities',
+    view: 'all'
+  }, { isCollected: id => id === 'a1' });
+  assert.match(browse.summary, /1 of 2 collected in this set/);
+});
+
+test('formatSetProgressExplanation protects one copy when describing duplicates', () => {
+  const text = formatSetProgressExplanation({
+    series: 'Rising Star',
+    owned: 2,
+    total: 3,
+    duplicateCards: 1,
+    exchangeableCopies: 2
+  });
+  assert.match(text, /2 of 3 cards in Rising Star/);
+  assert.match(text, /1 still missing/);
+  assert.match(text, /2 exchangeable copies/);
+  assert.match(text, /one copy stays in your collection/);
 });
 
 test('buildTradeSearchHaystack includes collector numbers', () => {

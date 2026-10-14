@@ -12,7 +12,8 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  # Queue rapid main pushes instead of cancelling mid-deploy (avoids Pages race errors).
+  cancel-in-progress: false
 
 jobs:
   validate:

@@ -75,11 +75,15 @@ export function resolveBinderBrowseList(cards, filters = {}, options = {}) {
       ? (searching ? 'Search results' : 'Card Gallery')
       : series);
   const favoriteNote = favoritesOnly ? ' · favorites only' : '';
+  const view = String(filters.view || 'all').toLowerCase();
+  const progressNote = series !== 'All Series' && !searching && view === 'all' && !favoritesOnly
+    ? ` · ${owned} of ${pool.length} collected in this set`
+    : '';
   const summary = searching
     ? `Showing ${list.length} of ${pool.length} cards matching “${query}”${favoriteNote}`
     : (series === 'All Series'
       ? `Showing ${list.length} of ${pool.length} cards${favoriteNote}`
-      : `Showing ${list.length} of ${pool.length} cards in ${series}${favoriteNote}`);
+      : `Showing ${list.length} of ${pool.length} cards in ${series}${favoriteNote}${progressNote}`);
 
   return {
     showLanding: false,
@@ -89,6 +93,35 @@ export function resolveBinderBrowseList(cards, filters = {}, options = {}) {
     heading,
     summary
   };
+}
+
+/**
+ * Explains set completion for binder headers without changing economy rules.
+ * `owned` is unique collected cards in the set; extras/duplicates are ignored.
+ */
+export function formatSetProgressExplanation({
+  series = '',
+  owned = 0,
+  total = 0,
+  duplicateCards = 0,
+  exchangeableCopies = 0
+} = {}) {
+  const setName = String(series || '').trim() || 'this set';
+  const ownedCount = Math.max(0, Number(owned) || 0);
+  const totalCount = Math.max(0, Number(total) || 0);
+  const duplicateCount = Math.max(0, Number(duplicateCards) || 0);
+  const exchangeable = Math.max(0, Number(exchangeableCopies) || 0);
+  if (totalCount <= 0) {
+    return `No cards are listed for ${setName} yet.`;
+  }
+  const remaining = Math.max(0, totalCount - ownedCount);
+  const completion = remaining === 0
+    ? `You have every card in ${setName}.`
+    : `You have ${ownedCount} of ${totalCount} cards in ${setName} (${remaining} still missing).`;
+  if (duplicateCount <= 0) {
+    return `${completion} Progress counts unique cards, not extra copies.`;
+  }
+  return `${completion} ${duplicateCount} card${duplicateCount === 1 ? '' : 's'} with extras · ${exchangeable} exchangeable ${exchangeable === 1 ? 'copy' : 'copies'} (extras only; one copy stays in your collection).`;
 }
 
 /** Preferred on-card number label (collector number when present). */
@@ -106,6 +139,7 @@ export function formatBinderOwnedPill({ shown = 0, owned = 0, view = 'all' } = {
   const mode = String(view || 'all').toLowerCase();
   if (mode === 'missing') return `Showing ${shownCount} not collected`;
   if (mode === 'collected') return `Collected in view: ${ownedCount}`;
+  if (mode === 'duplicates') return `Duplicates in view: ${shownCount}`;
   return `Collected: ${ownedCount} / ${shownCount}`;
 }
 

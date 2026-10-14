@@ -1021,6 +1021,7 @@ function filterCardList(source, filters = activeFilters(), { respectOwnership = 
     return api.filterCardList(source, filters, {
       respectOwnership,
       isCollected,
+      isFavorite,
       sortCards
     });
   }
@@ -1637,7 +1638,22 @@ function renderGridPage(target, mode) {
         if (mode === 'favorites') {
           element.textContent = `Showing ${list.length} of ${baseList.length} favorite${baseList.length === 1 ? '' : 's'}`;
         } else if (mode === 'duplicates') {
-          element.textContent = `Showing ${list.length} of ${baseList.length} duplicate card${baseList.length === 1 ? '' : 's'}`;
+          if (!list.length) {
+            element.textContent = baseList.length
+              ? 'No duplicate cards match these filters'
+              : 'No duplicate cards yet — extras appear here when you own more than one copy';
+          } else {
+            const exchangeable = list.reduce((sum, card) => sum + Math.max(0, getCardQuantity(card.id) - 1), 0);
+            const explain = window.StarlightCardFilters?.formatSetProgressExplanation?.({
+              series: activeFilters().series === 'All Series' ? 'your collection' : activeFilters().series,
+              owned: cards.filter(card => isCollected(card.id)).length,
+              total: cards.length,
+              duplicateCards: list.length,
+              exchangeableCopies: exchangeable
+            });
+            element.textContent = explain
+              || `Showing ${list.length} of ${baseList.length} duplicate card${baseList.length === 1 ? '' : 's'} · ${exchangeable} exchangeable ${exchangeable === 1 ? 'copy' : 'copies'} (one copy stays collected)`;
+          }
         } else {
           element.textContent = `Showing ${list.length} of ${baseList.length} owned card${baseList.length === 1 ? '' : 's'}`;
         }

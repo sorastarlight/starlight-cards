@@ -11,34 +11,43 @@ Canonical guidance: `AGENTS.md`. Active milestone: **V1.0 — Foundation**, plus
 ## Completed
 
 ### Reward integrity — opening recovery
-- Migration `20261014080000_daily_booster_opening_recovery` **applied to production** (schema + RPC overloads). Live mode left at **unlimited**.
-- Client request-UUID recovery deployed (`df258b2`). Live `daily-booster-page.js?v=1.7.0` + recovery modules verified on Pages.
-- Isolated Postgres suite PASS; two-session concurrency PASS.
-- Docs: `docs/DAILY_OPENING_RECOVERY.md`. Runner: `scripts/run-opening-recovery-local.mjs`.
+- Migration `20261014080000_daily_booster_opening_recovery` **applied to production**. Live mode left at **unlimited**.
+- Client recovery deployed (`df258b2`). Isolated Postgres + two-session concurrency PASS.
+- Docs: `docs/DAILY_OPENING_RECOVERY.md`.
 
 ### Shared experience — home featured sets
-- Home **Featured sets** strip uses live card catalog (`8c66c6b`). Verified live: `homeFeaturedSets` + `home-featured-sets.js` on Pages.
+- Home **Featured sets** strip (`8c66c6b`), verified live.
 
 ### Pack opening — Reveal All / Skip + sound mute
-- Reveal engine `v1.5.18` (`c555138`): presentation-only **Reveal All** / **Skip to results**.
-- Reveal engine `v1.5.19`: in-reveal **Sound/Muted** toggle persists via existing SFX localStorage key; muting stops active audio only (no inventory side effects).
+- `v1.5.18` Reveal All/Skip (`c555138`); `v1.5.19` Sound/Muted toggle (`b3b8695`).
+- **Live verified:** `reward-reveal.js` serves `1.5.19` with `skipToResults` + `st-r3-sound`.
+- Entry HTML cache-busts bumped to pull updated reveal imports (pending deploy).
+
+### Collection — progress copy + favorites filter fix
+- Shared binder summary includes set “X of Y collected” progress.
+- Duplicates tab explains exchangeable copies (one copy stays collected).
+- `app.js` now passes `isFavorite` into shared `filterCardList` (favorites-only was silently ignored).
+
+### Deploy hygiene
+- GitHub Pages `build_type` switched to **workflow** (Actions-only) to stop legacy+Actions dual-deploy races.
+- Deploy workflow concurrency set to queue (`cancel-in-progress: false`).
 
 ## Current task
 
-Verify Pages serves `reward-reveal.js?v=1.5.19`. Continue slice 3 reduced-motion / rarity restraint spot-check, then slice 4 collection/progression. Authenticated Daily Pack smoke still needs QA credentials.
+Finish deploying cache-bust + collection progress slice; continue collection/binder usability, then admin/Twitch and a11y. Authenticated Daily Pack smoke still needs QA credentials.
 
 ## Validation evidence
 
-- Commits: `df258b2` recovery, `8c66c6b` home, `c555138` Reveal All/Skip, pending sound mute.
-- `npm run check`: 218 pass.
-- Local DB suite + concurrency PASS; production mode unchanged at unlimited.
+- Commits: `df258b2`, `8c66c6b`, `c555138`, `b3b8695` (+ pending collection/cache-bust).
+- Live reveal `1.5.19` confirmed on cards.sorastarlight.net.
+- `npm run check`: 220 pass.
+- Production daily mode unchanged (unlimited).
 
 ## Unresolved / watch
 
 - Authenticated live Daily Pack smoke blocked without QA account credentials.
 - Historical unlimited openings before migration still unrecoverable.
 - Do not install `starlight_test` on production.
-- Paid Supabase branch (~$0.013/hr) unused (local Postgres instead).
 
 ## Repository map
 

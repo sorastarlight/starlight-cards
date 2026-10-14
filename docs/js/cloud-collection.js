@@ -640,7 +640,7 @@ async function loadBinderApplication() {
         return;
     }
 
-    window.StarlightCardFilters = await import('./card-filter-utils.js?v=1.1.1');
+    window.StarlightCardFilters = await import('./card-filter-utils.js?v=1.1.2');
     window.StarlightFavoriteUtils = await import('./favorite-utils.js?v=1.0.0');
 
     return new Promise((resolve, reject) => {
