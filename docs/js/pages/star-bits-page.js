@@ -6,6 +6,7 @@ import {
 } from '../star-bits-service.js';
 import { notifyShellEconomyChanged } from '../shell-economy.js';
 import { starBitAmountHtml, starBitIconHtml } from '../star-bit-icon.js';
+import { STAR_BITS_SUMMARY } from '../progression-clarity.js';
 
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
   '&': '&amp;',
@@ -275,10 +276,16 @@ async function performConversion() {
 }
 
 async function initializePage() {
+  const summary = document.getElementById('bits-clarity-summary');
+  if (summary) summary.textContent = STAR_BITS_SUMMARY;
+
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) {
-    displayStatus('Please sign in to use the Star Bits Exchange.', 'error');
-    redirectToLogin('signin', { delayMs: 1400 });
+    displayStatus('Sign in to convert duplicates into Star Bits. Exchange rates stay visible after you sign in.', 'error');
+    summarySection?.classList.add('hidden');
+    rateSection?.classList.add('hidden');
+    hideDynamicSections();
+    redirectToLogin('signin', { delayMs: 1600 });
     return;
   }
   await loadPreview();

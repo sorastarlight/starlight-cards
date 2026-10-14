@@ -8,6 +8,13 @@ import {
 import { beginTwitchLink, callTwitchWorker, getMyTwitchConnection } from '../twitch-service.js';
 import { getCachedWebsiteContent } from '../website-content-hydrate.js';
 import { starBitAmountHtml } from '../star-bit-icon.js';
+import { supabase } from '../supabase-client.js';
+import {
+  SEASON_PASS_SUMMARY,
+  formatSeasonEligibility,
+  nextSeasonTier,
+  seasonPointsHowTo
+} from '../progression-clarity.js';
 
 const seasonCopy = { ...(getCachedWebsiteContent()?.seasonPass || {}) };
 
@@ -244,11 +251,18 @@ function renderLocked(data) {
   const season = data.season || {};
   renderHero({ ...data, hasAccess: false }, season);
   const linked = Boolean(data.twitchLinked);
+  const eligibility = formatSeasonEligibility({
+    hasAccess: false,
+    accessRequired: data.accessRequired || 'twitch_subscribers',
+    twitchLinked: linked
+  });
   summaryEl.innerHTML = `
     <div class="season-locked panel-inner">
       <p class="eyebrow">${esc(seasonCopy.subscriberEyebrow || 'Twitch Subscribers')}</p>
       <h2>${esc(seasonCopy.subscriberLockedTitle || 'Subscriber Collection Pass')}</h2>
       <p>${esc(seasonCopy.subscriberLockedLead || 'This season is for active Twitch subscribers. Link Twitch and subscribe to unlock the free track. New subs also receive a Season Pass unlock gift in Received Gifts.')}</p>
+      <p class="season-clarity">${esc(SEASON_PASS_SUMMARY)}</p>
+      <p class="season-eligibility">${esc(eligibility)}</p>
       ${seasonScheduleHtml(season)}
       <div class="season-locked-actions">
         ${linked
@@ -298,6 +312,20 @@ function render(data) {
   const tiers = Array.isArray(data.tiers) ? data.tiers : [];
   const maxPoints = Math.max(...tiers.map((t) => Number(t.pointsRequired) || 0), 1);
   const pct = Math.min(100, Math.round((points / maxPoints) * 100));
+  const milestone = nextSeasonTier(points, tiers);
+  const eligibility = formatSeasonEligibility({
+    hasAccess: data.hasAccess !== false,
+    accessRequired: data.accessRequired,
+    twitchLinked: Boolean(data.twitchLinked)
+  });
+  const rewardHint = milestone.tier
+    ? [
+        Number(milestone.tier.rewardStarBits) > 0
+          ? `${Number(milestone.tier.rewardStarBits)} Star Bits`
+          : '',
+        milestone.tier.rewardTitleName ? `Title: ${milestone.tier.rewardTitleName}` : ''
+      ].filter(Boolean).join(' · ')
+    : '';
 
   summaryEl.innerHTML = `
     <div class="season-points">
@@ -308,6 +336,10 @@ function render(data) {
       <div class="season-progress" role="progressbar" aria-valuemin="0" aria-valuemax="${maxPoints}" aria-valuenow="${points}" aria-label="Season progress">
         <span style="width:${pct}%"></span>
       </div>
+      <p class="season-next-milestone">${esc(milestone.label)}${rewardHint ? ` · ${esc(rewardHint)}` : ''}</p>
+      <p class="season-clarity">${esc(SEASON_PASS_SUMMARY)}</p>
+      <p class="season-eligibility">${esc(eligibility)}</p>
+      <p class="season-howto"><span>How points earn</span>${esc(seasonPointsHowTo())}</p>
       ${seasonScheduleHtml(season)}
     </div>
   `;
@@ -437,6 +469,27 @@ async function load(options = {}) {
       summaryEl.innerHTML = `<p>${esc(seasonCopy.loadingLead || 'Loading season progress…')}</p>`;
     }
 
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData?.user) {
+      summaryEl.innerHTML = `
+        <div class="season-locked panel-inner">
+          <p class="eyebrow">Season Pass</p>
+          <h2>Sign in to view season progress</h2>
+          <p class="season-clarity">${esc(SEASON_PASS_SUMMARY)}</p>
+          <p class="season-eligibility">${esc(formatSeasonEligibility({
+            hasAccess: false,
+            accessRequired: 'twitch_subscribers',
+            twitchLinked: false
+          }))}</p>
+          <div class="season-locked-actions">
+            <a class="btn primary" data-shell-view="login" href="${shellHref('login')}">Sign In</a>
+          </div>
+        </div>
+      `;
+      trackEl.replaceChildren();
+      return;
+    }
+
     const [data, connection] = await Promise.all([
       getMySeasonPass(),
       getMyTwitchConnection().catch(() => ({ linked: false }))
@@ -449,7 +502,19 @@ async function load(options = {}) {
     }
   } catch (error) {
     stopSeasonCountdown();
-    summaryEl.innerHTML = `<p>Unable to load the season pass. ${esc(error.message || 'Sign in required.')}</p>`;
+    const message = String(error?.message || 'Sign in required.');
+    const needsSignIn = /sign in|jwt|auth|permission denied|not authenticated|login/i.test(message);
+    summaryEl.innerHTML = `
+      <div class="season-locked panel-inner">
+        <p class="eyebrow">Season Pass</p>
+        <h2>${esc(needsSignIn ? 'Sign in to view season progress' : 'Unable to load Season Pass')}</h2>
+        <p class="season-clarity">${esc(SEASON_PASS_SUMMARY)}</p>
+        <p>${esc(needsSignIn ? 'Sign in to track season points, eligibility, and tier rewards.' : message)}</p>
+        ${needsSignIn
+          ? `<div class="season-locked-actions"><a class="btn primary" data-shell-view="login" href="${shellHref('login')}">Sign In</a></div>`
+          : ''}
+      </div>
+    `;
     trackEl.replaceChildren();
   }
 }

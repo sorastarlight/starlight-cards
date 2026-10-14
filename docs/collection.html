@@ -9,7 +9,7 @@
 <link href="css/card-filters.css?v=1.1.5" rel="stylesheet"/>
 <link rel="stylesheet" href="css/starlight-public.css?v=1.2.0">
 <link rel="stylesheet" href="css/pages/public-page.css?v=2.1.0">
-<link href="css/pages/card-album-page.css?v=2.12.0" rel="stylesheet"/>
+<link href="css/pages/card-album-page.css?v=2.14.0" rel="stylesheet"/>
 <script src="js/browser-performance.js?v=1.0.0" defer></script>
 <link rel="stylesheet" href="css/shared-ui.css?v=1.6.25">
 <link rel="stylesheet" href="css/qol-ui.css?v=94.2.11">
@@ -39,12 +39,23 @@
 <div><strong data-total-copies="">0</strong><span>Copies</span></div>
 <div><strong data-favorite-count="">0</strong><span>Favorites</span></div>
 <div><strong data-duplicates="">0</strong><span>Extras</span></div>
-<div><strong data-star-bits="">0</strong><span>Star Bits</span></div>
-<div class="card-album-level"><span>Lv.</span><strong data-collector-level="">1</strong></div>
+<div title="Spendable shop currency"><strong data-star-bits="">0</strong><span>Star Bits</span></div>
+<div class="card-album-level" title="Lifetime collector level from XP"><span>Lv.</span><strong data-collector-level="">1</strong></div>
 </div>
-<div class="card-album-progress-row">
+<div class="card-album-progress-row" aria-label="Set completion">
 <div class="card-album-progress"><span data-progress=""></span></div>
-<small><span data-collected="">0</span> / <span data-total="">0</span> · <span data-percent="">0%</span></small>
+<small>Set completion · <span data-collected="">0</span> / <span data-total="">0</span> · <span data-percent="">0%</span></small>
+</div>
+<div class="card-album-level-row" aria-label="Collector level progress">
+<div class="card-album-progress"><span data-level-progress=""></span></div>
+<small>
+Collector XP <span data-collector-points="">0</span>
+· <span data-level-milestone="">Sign in to track level progress</span>
+</small>
+<p class="card-album-progress-gloss" data-progression-gloss>
+Collector XP is lifetime progress from cards you earn. It never decreases when you convert extras or spend Star Bits. XP per card: Common 1 · Uncommon 2 · Rare 5 · Epic 15 · Legendary 50.
+</p>
+<p class="card-album-progress-unlock" data-level-unlock-hint hidden></p>
 </div>
 </div>
 </header>
@@ -102,7 +113,7 @@
 <div aria-hidden="true" aria-live="polite" id="cardOverlay" hidden></div>
 <script type="module" src="js/pages/website-content-hydrate-page.js?v=1.2"></script>
 <script src="js/cloud-collection.js?v=1.4.5" type="module"></script>
-<script src="js/site-dashboard.js" type="module"></script>
+<script src="js/site-dashboard.js?v=1.2.0" type="module"></script>
 <script src="js/pages/collection-page.js?v=1.0"></script>
 <script src="js/collection-redesign.js?v=1.4.0" type="module"></script>
 <script src="js/binder-theme-config.js?v=1.2.0"></script>

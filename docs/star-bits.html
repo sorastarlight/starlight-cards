@@ -6,7 +6,7 @@
 <title>Star Bits | Starlight Card Binder</title>
 <link href="css/style.css?v=1.0.2" rel="stylesheet"/>
 <link rel="stylesheet" href="css/pages/public-page.css?v=2.1.0">
-<link rel="stylesheet" href="css/pages/star-bits.css?v=2.1">
+<link rel="stylesheet" href="css/pages/star-bits.css?v=2.3">
 <script src="js/browser-performance.js?v=1.0.0" defer></script>
 <link rel="stylesheet" href="css/shared-ui.css?v=1.6.18">
 </head>
@@ -20,15 +20,25 @@
 <p data-content="starBits.lead">Convert extra copies into Star Bits. One copy of every card always stays in your collection.</p>
 </header>
 
+<aside class="bits-clarity" aria-label="About Star Bits">
+  <p id="bits-clarity-summary">Star Bits are a spendable balance. Convert only extra copies (one of each card stays protected), then spend them in the Card Shop. Missions, gifts, and season rewards can also grant Star Bits.</p>
+  <p class="bits-clarity-note">Collector XP is separate lifetime progress and is not reduced by conversion.</p>
+  <p class="bits-clarity-actions">
+    <a class="bits-clarity-link" data-shell-view="shop" href="binder?view=shop">Spend in Card Shop</a>
+    <a class="bits-clarity-link" data-shell-view="collection" href="binder?view=collection">View Collection</a>
+  </p>
+</aside>
+
 <section class="bits-summary hidden" id="summary-section" aria-label="Exchange summary">
-<div class="summary-card"><strong class="star-bit-amount"><img class="star-bit-icon star-bit-icon--md" src="site_assets/icons/star-bit.png?v=2" alt="" width="20" height="20" decoding="async"><span id="balance-value">0</span></strong><span>Star Bits</span></div>
+<div class="summary-card"><strong class="star-bit-amount"><img class="star-bit-icon star-bit-icon--md" src="site_assets/icons/star-bit.png?v=2" alt="" width="20" height="20" decoding="async"><span id="balance-value">0</span></strong><span>Current Balance</span></div>
 <div class="summary-card"><strong id="duplicate-card-types">0</strong><span>Cards With Extras</span></div>
-<div class="summary-card"><strong id="duplicate-copy-count">0</strong><span>Duplicate Copies</span></div>
-<div class="summary-card"><strong class="star-bit-amount"><img class="star-bit-icon star-bit-icon--md" src="site_assets/icons/star-bit.png?v=2" alt="" width="20" height="20" decoding="async"><span id="exchange-value">0</span></strong><span>Available Star Bits</span></div>
+<div class="summary-card"><strong id="duplicate-copy-count">0</strong><span>Convertible Copies</span></div>
+<div class="summary-card"><strong class="star-bit-amount"><img class="star-bit-icon star-bit-icon--md" src="site_assets/icons/star-bit.png?v=2" alt="" width="20" height="20" decoding="async"><span id="exchange-value">0</span></strong><span>If All Converted</span></div>
 </section>
 
 <section class="rate-section hidden" id="rate-section" aria-label="Exchange rates">
-<h2 class="visually-hidden" data-content="starBits.ratesTitle">Exchange Values</h2>
+<h2 class="rate-section-title" data-content="starBits.ratesTitle">Star Bits per duplicate</h2>
+<p class="rate-section-lead">Rates apply only to extra copies. Your final copy of each card stays in the binder.</p>
 <div class="rate-grid" id="rate-grid"></div>
 </section>
 
@@ -61,7 +71,7 @@
 </footer>
 </main>
 <script type="module" src="js/pages/website-content-hydrate-page.js?v=1.2"></script>
-<script src="js/pages/star-bits-page.js?v=2.0" type="module"></script>
+<script src="js/pages/star-bits-page.js?v=2.2" type="module"></script>
 <script src="js/shared-ui.js?v=1.6.15"></script>
 </body>
 </html>

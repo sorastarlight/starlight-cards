@@ -332,6 +332,29 @@
   color: #405fa1;
 }
 
+.season-next-milestone,
+.season-clarity,
+.season-eligibility,
+.season-howto {
+  margin: 0;
+  color: #5b6788;
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.season-next-milestone {
+  color: #405fa1;
+  font-weight: 800;
+}
+
+.season-howto span {
+  display: block;
+  margin-bottom: 2px;
+  color: #405fa1;
+  font-weight: 800;
+  font-size: 0.78rem;
+}
+
 .season-progress {
   margin: 8px 0;
   height: 12px;

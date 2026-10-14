@@ -22,7 +22,12 @@ test('levelFromPoints continues past level 10', () => {
 });
 
 test('site dashboard uses the shared collector-level module', async () => {
-  const source = await readFile(new URL('../docs/js/site-dashboard.js', import.meta.url), 'utf8');
-  assert.match(source, /from ["']\.\/collector-level\.js["']/);
-  assert.doesNotMatch(source, /function levelFromPoints\s*\(/);
+  const [dashboard, clarity] = await Promise.all([
+    readFile(new URL('../docs/js/site-dashboard.js', import.meta.url), 'utf8'),
+    readFile(new URL('../docs/js/progression-clarity.js', import.meta.url), 'utf8')
+  ]);
+  assert.match(dashboard, /from ["']\.\/progression-clarity\.js["']/);
+  assert.match(dashboard, /describeCollectorProgress/);
+  assert.doesNotMatch(dashboard, /function levelFromPoints\s*\(/);
+  assert.match(clarity, /from ["']\.\/collector-level\.js["']/);
 });

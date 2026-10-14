@@ -1,7 +1,10 @@
-
 import { supabase } from "./supabase-client.js";
-import { levelFromPoints } from "./collector-level.js";
 import { applyDailyNavReadyState } from "./daily-nav-indicator.js";
+import {
+  COLLECTOR_XP_SUMMARY,
+  collectorXpRatesLine,
+  describeCollectorProgress
+} from "./progression-clarity.js";
 
 let countdownTimer = null;
 
@@ -30,10 +33,39 @@ function startCountdown(dateValue) {
   tick();
   countdownTimer = setInterval(tick, 1000);
 }
+function paintCollectorProgress(xp, { signedIn = true } = {}) {
+  const progress = describeCollectorProgress(xp);
+  setText('[data-collector-level]', progress.level);
+  setText('[data-collector-points]', progress.xp.toLocaleString());
+  setText('[data-next-level-points]', progress.next.toLocaleString());
+  setText(
+    '[data-level-milestone]',
+    signedIn ? progress.milestone : 'Sign in to track level progress'
+  );
+  document.querySelectorAll('[data-level-progress]').forEach((el) => {
+    el.style.width = `${signedIn ? progress.percent : 0}%`;
+  });
+  document.querySelectorAll('[data-progression-gloss]').forEach((el) => {
+    el.textContent = `${COLLECTOR_XP_SUMMARY} XP per card: ${collectorXpRatesLine()}.`;
+  });
+  document.querySelectorAll('[data-level-unlock-hint]').forEach((el) => {
+    if (!signedIn || !progress.unlockHint) {
+      el.hidden = true;
+      el.textContent = '';
+      return;
+    }
+    el.hidden = false;
+    el.textContent = progress.unlockHint;
+  });
+}
+
 async function loadEconomy() {
   const { data: authData } = await supabase.auth.getUser();
   if (!authData?.user) {
     setText('[data-star-bits]', '—'); setText('[data-duplicates]', '—');
+    setText('[data-favorite-count]', '—');
+    setText('[data-total-copies]', '—');
+    paintCollectorProgress(0, { signedIn: false });
     document.querySelectorAll('[data-daily-status]').forEach(el=>el.textContent='Sign in to claim');
     document.querySelectorAll('[data-daily-cta]').forEach(el=>{el.classList.remove('is-loading','is-ready','is-claimed');el.classList.add('is-claimed');});
     setText('[data-daily-cta-label]', 'Sign In for Free Daily Starlight Pack');
@@ -80,13 +112,11 @@ async function loadEconomy() {
     // Collector XP is lifetime progression. It increases when cards are earned,
     // but never decreases when extras are traded or converted into Star Bits.
     const points=Math.max(0,Number(wallet?.collector_xp||0));
-    const level=levelFromPoints(points);
-    setText('[data-collector-level]', level.level);
-    setText('[data-collector-points]', points);
-    setText('[data-next-level-points]', level.next);
+    paintCollectorProgress(points, { signedIn: true });
     setText('[data-total-copies]', totalCopies);
     setText('[data-favorite-count]', favorites);
-    document.querySelectorAll('[data-level-progress]').forEach(el=>el.style.width=`${level.percent}%`);
+  } else if (wallet) {
+    paintCollectorProgress(Math.max(0, Number(wallet.collector_xp || 0)), { signedIn: true });
   }
 }
 

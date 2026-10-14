@@ -29,7 +29,8 @@
 }
 
 .card-album-header .card-album-stats span,
-.card-album-header .card-album-progress-row small {
+.card-album-header .card-album-progress-row small,
+.card-album-header .card-album-level-row small {
   color: rgba(255, 255, 255, 0.85);
 }
 
@@ -39,6 +40,15 @@
 
 .card-album-header .card-album-progress {
   background: rgba(255, 255, 255, 0.2);
+}
+
+.card-album-header .card-album-progress-gloss,
+.card-album-header .card-album-progress-unlock {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.card-album-header .card-album-level-row {
+  border-top-color: rgba(255, 255, 255, 0.22);
 }
 
 .card-album-page.public-page {
@@ -103,14 +113,36 @@
   gap: 4px;
 }
 
-.card-album-progress-row {
+.card-album-progress-row,
+.card-album-level-row {
   display: grid;
   gap: 6px;
 }
 
-.card-album-progress-row small {
+.card-album-progress-row small,
+.card-album-level-row small {
   color: #6b7089;
   font-weight: 800;
+}
+
+.card-album-level-row {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(107, 198, 248, 0.18);
+}
+
+.card-album-progress-gloss,
+.card-album-progress-unlock {
+  margin: 0;
+  color: #5b6788;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  max-width: 52ch;
+}
+
+.card-album-progress-unlock {
+  font-weight: 700;
+  color: #405fa1;
 }
 
 .card-album-progress {
@@ -122,6 +154,7 @@
 
 .card-album-progress span {
   display: block;
+  width: 0%;
   height: 100%;
   border-radius: inherit;
   background: linear-gradient(90deg, rgba(107, 198, 248, 0.95), rgba(255, 130, 200, 0.88));
