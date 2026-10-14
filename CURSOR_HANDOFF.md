@@ -57,3 +57,11 @@ Top nav layout: logo + Collectible Card Hub ribbon on the left; primary links pa
 ## Verification and limitations
 
 This workspace was seeded by cloning `origin/main` into the Games path. Node modules are not required for the root harness. Production Supabase and live collector data are external — treat them carefully.
+
+### Unlimited daily recovery (known limit)
+
+When `free_daily` runs in **unlimited** mode, claim status stays `available` and the status RPC does **not** return `cardsAwarded`. Same-day **View** / reveal replay uses the browser-local receipt in `docs/js/daily-booster-receipt.js` only. That recovery does **not** survive cleared site storage or another device; there is no accessible server claim-receipt payload for unlimited mode in this slice. Do not change daily mode or database behavior to “fix” that without an explicit follow-up.
+
+### Shell iframe readiness
+
+`docs/js/shell-view-readiness.js` gates ready/height/reset on origin, iframe `event.source`, route, `shellLoad` token, and live iframe href. Late iframe `load` must not re-enter the loading overlay after ready. Missing ready arms `VIEW_READY_TIMEOUT_MS` → one retry → recoverable error + Try Again (no endless overlay). Legacy embeds that omit `loadToken` still clear loading when view + frame src match. Daily shell src stays `daily-booster.html`.

@@ -20,8 +20,13 @@ import { applyAvatarFrameClass } from './avatar-frame-utils.js';
 import { getMyProfileExtras } from './profile-extras-service.js';
 import { applyDailyNavReadyState } from './daily-nav-indicator.js';
 import { bindOwnershipToAuthUser } from './collection-local-store.js';
+import {
+  readShellViewState,
+  shouldAcceptEmbeddedHandshake,
+  shouldReenterLoadingOnFrameLoad
+} from './shell-view-readiness.js';
 
-const SHELL_BUILD = '94.5.0';
+const SHELL_BUILD = '94.5.3';
 const VIEW_READY_TIMEOUT_MS = 6500;
 const MAX_VIEW_RETRIES = 1;
 const SFX_KEY = 'sora-starlight-card-binder-v7-sfx';
@@ -29,6 +34,8 @@ const SFX_KEY = 'sora-starlight-card-binder-v7-sfx';
 const routes = {
   home:{title:'Home',src:'home.html'},
   binder:{title:'Card Gallery',src:null}, collection:{title:'My Card Binder',src:'collection.html'},
+  // Keep .html on production (GH Pages serves it with query intact). Extensionless also
+  // works there, but this route is not changed solely for local static-server redirects.
   daily:{title:'Free Daily Starlight Pack',src:'daily-booster.html'}, shop:{title:'Shop',src:'booster-shop.html'}, events:{title:'Events',src:'events.html'}, redeem:{title:'Redeem Code',src:'redeem.html'},
   'star-bits':{title:'My Star Bits',src:'star-bits.html'},
   checklist:{title:'Card Checklist',src:'checklist.html'},
@@ -349,13 +356,30 @@ function viewsShareEmbeddedSrc(a, b) {
   return Boolean(left?.src && right?.src && left.src === right.src);
 }
 
-function markViewReady(data={}){
-  if (
+function acceptEmbeddedHandshake(data={}, event=null){
+  const shareSrc = Boolean(
     data.view
     && routes[data.view]
-    && data.view !== currentRoute
-    && !viewsShareEmbeddedSrc(data.view, currentRoute)
-  ) {
+    && viewsShareEmbeddedSrc(data.view, currentRoute)
+  );
+  return shouldAcceptEmbeddedHandshake({
+    origin: event?.origin,
+    expectedOrigin: location.origin,
+    source: event?.source ?? null,
+    expectedSource: frame?.contentWindow || null,
+    messageView: data.view,
+    messageLoadToken: data.loadToken,
+    currentRoute,
+    currentLoadToken,
+    shareSrc,
+    frameHref: getFrameLocation(),
+    routeSrc: routes[currentRoute]?.src || null,
+    requireFrameSrcMatch: Boolean(routes[currentRoute]?.src)
+  });
+}
+
+function markViewReady(data={}, event=null){
+  if (!acceptEmbeddedHandshake(data, event)) {
     return;
   }
   clearReadyTimer();
@@ -370,6 +394,21 @@ function markViewReady(data={}){
       });
     });
   }
+}
+
+function handleEmbeddedLoadFailure(){
+  if(!frameWrap?.classList.contains('active'))return;
+  if(currentRoute==='binder'||!routes[currentRoute]?.src)return;
+  const token=currentLoadToken;
+  const route=currentRoute;
+  if(retryCount<MAX_VIEW_RETRIES){
+    retryCount+=1;
+    loadEmbeddedView(route,{force:true});
+    return;
+  }
+  if(route!==currentRoute||token!==currentLoadToken)return;
+  clearReadyTimer();
+  setViewState('error');
 }
 
 function resetEmbeddedViewLayout(height){
@@ -855,8 +894,8 @@ window.addEventListener('message',async e=>{
     liveFeedWidget?.refresh?.();
   }
   if (data.type==='starlight-view-ready'||data.type==='starlight-content-ready'||data.type==='starlight-app-ready'){
-    markViewReady(data);
-    if (frame?.contentWindow) {
+    markViewReady(data, e);
+    if (frame?.contentWindow && acceptEmbeddedHandshake(data, e)) {
       const layout = document.body.dataset.shellLayout || 'masthead';
       try {
         frame.contentWindow.postMessage({ type: 'starlight-shell-layout', layout }, location.origin);
@@ -866,15 +905,13 @@ window.addEventListener('message',async e=>{
       }
     }
   }
-  if(data.type==='starlight-view-height')resizeEmbeddedView(Number(data.height));
+  if(data.type==='starlight-view-height'){
+    if (!acceptEmbeddedHandshake(data, e)) return;
+    resizeEmbeddedView(Number(data.height));
+  }
   if(data.type==='starlight-view-reset'){
-    if (
-      !data.view
-      || data.view === currentRoute
-      || viewsShareEmbeddedSrc(data.view, currentRoute)
-    ) {
-      resetEmbeddedViewLayout(Number(data.height));
-    }
+    if (!acceptEmbeddedHandshake(data, e)) return;
+    resetEmbeddedViewLayout(Number(data.height));
   }
   if(data.type==='starlight-shell-chrome'){
     liveFeedViewSuppressed = Boolean(data.hideLiveFeed);
@@ -886,9 +923,19 @@ frame?.addEventListener('pointerdown',()=>{closeNotificationPopover();closeAccou
 frame?.addEventListener('load',()=>{
   closeNotificationPopover();
   closeAccountMenu();
-  if(getFrameLocation().includes('about:blank')||frame.getAttribute('src')==='about:blank')return;
-  // A successful document load is not enough; the child still must send its ready handshake.
+  const href=getFrameLocation();
+  const viewState=readShellViewState(frameWrap);
+  if(!shouldReenterLoadingOnFrameLoad({
+    frameHref:href,
+    frameSrcAttr:frame.getAttribute('src'),
+    viewState
+  })){
+    return;
+  }
   setViewState('loading');
+});
+frame?.addEventListener('error',()=>{
+  handleEmbeddedLoadFailure();
 });
 
 window.addEventListener('pageshow',event=>{

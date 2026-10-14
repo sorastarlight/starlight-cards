@@ -61,3 +61,11 @@ test('shell iframe navigation avoids history-pushing src assignment', async () =
   assert.match(shell, /setFrameLocation\('about:blank'\)/);
   assert.doesNotMatch(shell, /if\(frame\)frame\.src='about:blank'/);
 });
+
+test('shell iframe load gates loading re-entry through shell-view-readiness', async () => {
+  const shell = await read('docs/js/app-shell.js');
+  assert.match(shell, /shouldReenterLoadingOnFrameLoad/);
+  assert.match(shell, /shouldAcceptEmbeddedHandshake/);
+  assert.match(shell, /daily:\{title:'Free Daily Starlight Pack',src:'daily-booster\.html'\}/);
+  assert.match(shell, /from '\.\/shell-view-readiness\.js'/);
+});

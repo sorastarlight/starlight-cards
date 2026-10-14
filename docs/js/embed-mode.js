@@ -157,7 +157,10 @@ function reportHeight(){
     const height = documentHeight();
     if (Math.abs(height - lastHeight) > 2) {
       lastHeight = height;
-      send('starlight-view-height', {height});
+      send('starlight-view-height', {
+        height,
+        loadToken: params.get('shellLoad') || ''
+      });
     }
   });
 }
@@ -283,6 +286,9 @@ if (!embedded && shouldRedirectToShell()) {
   window.__starlightEmbedReportHeight = reportHeight;
   window.__starlightEmbedResetLayout = () => {
     reportHeight();
-    send('starlight-view-reset', { height: documentHeight() });
+    send('starlight-view-reset', {
+      height: documentHeight(),
+      loadToken: params.get('shellLoad') || ''
+    });
   };
 }

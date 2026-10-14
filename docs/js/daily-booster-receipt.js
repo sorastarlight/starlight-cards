@@ -1,6 +1,15 @@
 /**
  * Account-scoped daily-pack reveal receipts (display hints only).
- * Server claim status + cardsAwarded remain authoritative.
+ * Server claim status + cardsAwarded remain authoritative when the server
+ * exposes them (typical once-per-day / claimed status).
+ *
+ * Unlimited-mode limitation (by design until a later slice): status stays
+ * available with empty cardsAwarded, so View/replay after claim depends on this
+ * local receipt. Cleared site storage, a private session, or another device
+ * cannot reconstruct today’s awarded card list from the status RPC alone — the
+ * server does not currently expose an accessible claim-receipt payload in that
+ * mode. Collection rows may still exist server-side; this module only covers
+ * same-browser reveal recovery.
  */
 
 export const DAILY_RECEIPT_KEY_PREFIX = 'starlight-daily-receipt-v1:user:';

@@ -237,6 +237,46 @@ test('unlimited availability still surfaces pending local receipt for View witho
   assert.equal(reconciled.cards.length, 2);
 });
 
+test('unlimited mode cannot recover claim cards after cleared storage or on another device', () => {
+  // Documented limitation (no DB/mode change in this slice): free_daily mode=unlimited
+  // keeps status.available=true and does not return cardsAwarded on the status RPC.
+  // View/replay therefore depends entirely on the same-browser local receipt.
+  installStorage();
+  const today = easternClaimDate();
+
+  const cleared = reconcileDailyRecoveryState({
+    status: {
+      available: true,
+      disabled: false,
+      mode: 'unlimited',
+      cardsAwarded: [],
+      claimDate: today,
+      nextClaimAt: null
+    },
+    receipt: null,
+    ownerId: 'user-a',
+    todayClaimDate: today,
+    epoch: { ownerId: 'user-a', generation: 1 }
+  });
+  assert.equal(cleared.kind, 'available');
+  assert.equal(cleared.showViewAction, false);
+  assert.equal(cleared.source, 'none');
+  assert.deepEqual(cleared.cards, []);
+
+  const lostClaim = resolveLostClaimRecovery(
+    {
+      available: true,
+      disabled: false,
+      mode: 'unlimited',
+      cardsAwarded: [],
+      claimDate: today
+    },
+    { ownerId: 'user-a', todayClaimDate: today, epoch: { ownerId: 'user-a', generation: 1 } }
+  );
+  assert.equal(lostClaim.recoverable, false);
+  assert.equal(lostClaim.reconciled.source, 'none');
+});
+
 test('America/New_York midnight boundary discards yesterday receipt for today availability', () => {
   installStorage();
   writeDailyReceipt('user-a', {
