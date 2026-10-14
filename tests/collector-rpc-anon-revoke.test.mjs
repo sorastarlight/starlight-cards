@@ -25,9 +25,12 @@ test('forward migration revokes anon execute on collector-private RPCs', async (
 });
 
 test('opening-recovery migration revokes anon on open/status/opening RPCs', async () => {
-  const migration = await read(
-    'supabase/migrations/20261014080000_daily_booster_opening_recovery.sql'
-  );
+  // Production apply order uses three split files; 20261014080000 is a no-op pointer.
+  const migration = [
+    await read('supabase/migrations/20261014152518_daily_booster_opening_recovery.sql'),
+    await read('supabase/migrations/20261014152704_daily_booster_opening_recovery_rpcs_helpers.sql'),
+    await read('supabase/migrations/20261014152749_daily_booster_opening_recovery_open_rpcs.sql')
+  ].join('\n');
   for (const fn of [
     'open_daily_booster\\(\\)',
     'open_daily_booster\\(uuid\\)',
@@ -41,5 +44,5 @@ test('opening-recovery migration revokes anon on open/status/opening RPCs', asyn
     );
   }
   assert.match(migration, /pg_advisory_xact_lock/);
-  assert.match(migration, /Compatibility wrapper for deployed clients/);
+  assert.match(migration, /Compatibility wrapper for deployed clients|preserve deployed zero-arg/i);
 });

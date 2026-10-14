@@ -166,5 +166,6 @@ begin
 end;
 $function$;
 
-revoke all on function public.apply_twitch_reward_v890(uuid, text, bigint, text, integer, text, text, uuid, text, text, uuid) from public, anon, authenticated;
-grant execute on function public.apply_twitch_reward_v890(uuid, text, bigint, text, integer, text, text, uuid, text, text, uuid) to service_role;
+-- Permissions as applied on production for this version (authenticated later revoked by 20261014183013).
+revoke all on function public.apply_twitch_reward_v890(uuid, text, bigint, text, integer, text, text, uuid, text, text, uuid) from public, anon;
+grant execute on function public.apply_twitch_reward_v890(uuid, text, bigint, text, integer, text, text, uuid, text, text, uuid) to authenticated, service_role;
