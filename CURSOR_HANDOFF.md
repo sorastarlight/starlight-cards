@@ -18,7 +18,7 @@ Continue from this Games folder clone of `https://github.com/sorastarlight/starl
 | `starlight-perspective-card.js` | **1.0.1** art fallback |
 | `card-filters.css` / `shared-ui.css` | **1.1.5** / **1.6.25** contrast + focus |
 | Twitch worker `/health` | **1.1.3** ok |
-| `admin-twitch-page.js` | pending **1.4.3** (pipeline diag, grant notes, received retry, health detail) |
+| `admin-twitch-page.js` | **1.4.3** live (pipeline diag, grant notes, received retry, health detail) |
 
 Production daily mode still **unlimited**. Opening recovery migration applied earlier.
 
