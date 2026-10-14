@@ -12,32 +12,31 @@ Continue from this Games folder clone of `https://github.com/sorastarlight/starl
 | --- | --- |
 | `reward-reveal.js` | **1.5.20** (Skip, Sound, prefersReducedMotion) |
 | `daily-booster-page.js` | **1.7.2** |
-| `card-filters.css?v=1.1.3` | set progress meter + sticky mobile filters |
-| `app.js` | `updateSetProgressMeter` present |
-| `admin-twitch-page.js` | **1.4.2** |
+| Binder filters | summary + set progress meter (Rising Star: “0 of 12 collected…”) **browser-verified** |
+| `card-filters.css?v=1.1.4` | sticky mobile + binder summary |
 | Twitch worker `/health` | **1.1.3** ok |
+| `admin-twitch-page.js` | **1.4.2** |
 
 Production daily mode still **unlimited**. Opening recovery migration applied earlier.
 
 ## Completed this overhaul push
 
-1. **Reward integrity** — recovery shipped + isolated DB/concurrency.
-2. **Home** — featured sets.
-3. **Reveal fanfare** — Reveal All/Skip, mute, reduced-motion path.
-4. **Collection** — set progress copy + meter, favorites filter fix, duplicate protection messaging; Star Bits keeps one copy.
-5. **Twitch** — timestamp freshness, revocation, failed-event resume + admin Retry.
-6. **Deploy** — Pages Actions-only; cancel stuck deploys when concurrency blocks.
+1. Reward integrity — recovery + isolated DB/concurrency.
+2. Home featured sets.
+3. Reveal fanfare — Reveal All/Skip, mute, reduced-motion.
+4. Collection — set progress (binder panel fixed in `d22834f`), favorites filter, duplicate copy protection messaging; Star Bits keeps one copy.
+5. Twitch — timestamp freshness, revocation, failed-event resume + admin Retry; worker 1.1.3.
+6. Deploy — Pages Actions-only; Node 22 + deploy-pages v5; sticky filters.
 
 ## Current task
 
-- Broader a11y/perf matrix: zoom/contrast spot-check, slow-network, large-collection stress, authenticated Daily Pack smoke.
-- Deeper Twitch reconciliation dashboards optional.
-- Avoid inactivating in-flight Pages deployments (that cancels `deploy-pages`).
-
-**Blocked:** QA credentials for authenticated live open/replay.
+- Full a11y/perf matrix remainder: zoom/contrast, slow-network, large-collection stress.
+- Authenticated Daily Pack open/replay smoke (**needs QA credentials**).
+- Optional deeper Twitch reconciliation UI.
 
 ## Notes
 
-- Rapid pushes cancel *pending* concurrency peers (GitHub behavior); latest successful deploy includes prior file changes.
+- `binder.html` without `?view=` defaults shell to **home**; use `binder.html?view=binder` for Card Gallery.
+- Pages `Deploy to GitHub Pages` can take several minutes; do not mark in-flight deployments inactive.
 - Do not install `starlight_test` on production.
 - Overhaul **not complete**.
