@@ -8,31 +8,33 @@ Continue this existing project from this Games folder path (same pattern as Poke
 
 Canonical guidance: `AGENTS.md`. Active milestone: **V1.0 — Foundation**, plus the collector overhaul roadmap (reward integrity → shared UX → reveal fanfare → collection → admin/Twitch → a11y/perf).
 
-## Completed (reward integrity — opening recovery)
+## Completed
 
+### Reward integrity — opening recovery
 - Migration `20261014080000_daily_booster_opening_recovery` **applied to production** (schema + RPC overloads). Live mode left at **unlimited**.
-- Client: request UUID before open, recover-by-id, View latest, PGRST202-only legacy fallback (`docs/js/daily-booster-rpc-errors.js`).
-- Isolated Postgres suite PASS; two-session concurrency PASS (same claimId, one grant, replay on loser).
-- Docs: `docs/DAILY_OPENING_RECOVERY.md`. Local runner: `scripts/run-opening-recovery-local.mjs`.
+- Client request-UUID recovery deployed (`df258b2`). Live `daily-booster-page.js?v=1.7.0` + recovery modules verified on Pages.
+- Isolated Postgres suite PASS; two-session concurrency PASS.
+- Docs: `docs/DAILY_OPENING_RECOVERY.md`. Runner: `scripts/run-opening-recovery-local.mjs`.
+
+### Shared experience — home featured sets
+- Home **Featured sets** strip uses live card catalog (`8c66c6b`). Verified live: `homeFeaturedSets` + `home-featured-sets.js` on Pages.
 
 ## Current task
 
-Finish shipping home **Featured sets** (real catalog strip), then continue slice 2 (nav/token consistency) and authenticated Daily Pack QA smoke (needs QA login).
+Continue slice 2 (nav/token consistency) then slice 3 (reveal fanfare: Reveal All/Skip polish). Authenticated Daily Pack open/replay smoke still needs QA credentials.
 
 ## Validation evidence
 
-- Deployed commit: `df258b2` on `main` (GitHub Pages).
-- Live assets: recovery helpers present on `cards.sorastarlight.net`.
-- `npm run check`: 214 pass.
-- Local DB suite PASS; two-session concurrency PASS.
-- Production: both `open_daily_booster` overloads; anon EXECUTE false; mode still `unlimited`.
+- Commits on `main`: `df258b2` (recovery), `8c66c6b` (home featured).
+- `npm run check`: 215 pass.
+- Local DB suite + concurrency PASS; production overloads + grants verified; mode unchanged.
 
 ## Unresolved / watch
 
+- Authenticated live Daily Pack smoke blocked without QA account credentials.
 - Historical unlimited openings before migration still unrecoverable.
-- Supabase paid branch (~$0.013/hr) not used; local Postgres used instead.
 - Do not install `starlight_test` on production.
-- Shell iframe readiness already shipped (prior commits).
+- Paid Supabase branch (~$0.013/hr) unused (local Postgres instead).
 
 ## Repository map
 
