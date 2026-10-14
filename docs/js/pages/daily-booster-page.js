@@ -179,17 +179,37 @@ function setPortalDisabled({ epoch = null } = {}) {
   countdown.classList.add('hidden');
 }
 
-function setPortalReady({ epoch = null } = {}) {
+function setPortalReady(
+  { epoch = null, showView = false, cards = [], claimDate = null, nextClaimAt = null, claimedAt = null } = {}
+) {
   if (!canPaint(epoch)) return;
-  // Moving to today's available state must drop previous-day results immediately.
-  clearStalePresentation();
+  // Moving to today's available state must drop previous-day results immediately,
+  // unless a same-day pending reveal receipt still needs a View action (e.g. unlimited mode).
+  clearRewardResults();
+  setRetryStatusVisible(false);
+  if (!showView) {
+    clearTransientActions();
+  }
   portal.classList.remove('is-locked');
   pack.disabled = false;
   setPackBusy(false);
   packLabel.textContent = READY_PACK_LABEL;
   heading.textContent = dailyCopy.readyTitle || 'Your Free Pack Is Ready!';
-  description.textContent = dailyCopy.readyLead || "Click the pack to view today's cards.";
+  description.textContent = showView
+    ? dailyCopy.readyWithRecoveryLead ||
+      "Your Free Pack is ready again. You can also view today’s interrupted results without opening another pack."
+    : dailyCopy.readyLead || "Click the pack to view today's cards.";
   countdown.classList.add('hidden');
+  setViewTodayVisible(showView);
+  pendingRecovery = showView
+    ? { cards, nextClaimAt, claimDate, claimedAt }
+    : null;
+  if (showView && cards.length) {
+    render(cards, dailyCopy.replayResultsTitle || 'Cards already received today', {
+      epoch,
+      replay: true
+    });
+  }
 }
 
 function setPortalClaimed(data, { showView = false, epoch = null, replay = false } = {}) {
@@ -340,7 +360,14 @@ function applyReconciledState(reconciled, { epoch = null } = {}) {
     return;
   }
   if (reconciled.kind === 'available') {
-    setPortalReady({ epoch });
+    setPortalReady({
+      epoch,
+      showView: Boolean(reconciled.showViewAction && reconciled.cards?.length),
+      cards: reconciled.cards || [],
+      claimDate: reconciled.claimDate || null,
+      nextClaimAt: reconciled.nextClaimAt || null,
+      claimedAt: reconciled.claimedAt || null
+    });
     return;
   }
   if (reconciled.kind === 'claimed') {

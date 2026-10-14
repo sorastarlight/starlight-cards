@@ -205,6 +205,38 @@ test('corrupted local receipt is ignored in favor of server cards', () => {
   assert.equal(reconciled.cards.length, 2);
 });
 
+test('unlimited availability still surfaces pending local receipt for View without re-grant', () => {
+  installStorage();
+  const today = easternClaimDate();
+  writeDailyReceipt('user-a', {
+    ownerId: 'user-a',
+    claimDate: today,
+    status: 'pending_reveal',
+    cards: sampleCards,
+    generation: 2
+  });
+
+  const reconciled = reconcileDailyRecoveryState({
+    status: {
+      available: true,
+      disabled: false,
+      mode: 'unlimited',
+      cardsAwarded: [],
+      nextClaimAt: null
+    },
+    receipt: readDailyReceipt('user-a'),
+    ownerId: 'user-a',
+    todayClaimDate: today,
+    epoch: { ownerId: 'user-a', generation: 2 }
+  });
+
+  assert.equal(reconciled.kind, 'available');
+  assert.equal(reconciled.available, true);
+  assert.equal(reconciled.showViewAction, true);
+  assert.equal(reconciled.source, 'local-receipt');
+  assert.equal(reconciled.cards.length, 2);
+});
+
 test('America/New_York midnight boundary discards yesterday receipt for today availability', () => {
   installStorage();
   writeDailyReceipt('user-a', {
