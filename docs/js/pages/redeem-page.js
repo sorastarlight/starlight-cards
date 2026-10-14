@@ -1,7 +1,7 @@
 import { redirectToLogin } from '../shell-route-utils.js';
 import { supabase } from '../supabase-client.js';
 import { redeemRewardCode } from '../redemption-service.js';
-import { revealRewardSequence } from '../reward-reveal.js?v=1.5.18';
+import { revealRewardSequence } from '../reward-reveal.js?v=1.5.19';
 import { maybeCelebrateSeriesCompletions } from '../series-complete-celebration.js?v=1.0.0';
 import { notifyShellEconomyChanged } from '../shell-economy.js';
 import { applyAwardedCardsToLocalStore, captureOwnershipEpoch } from '../collection-local-store.js';
@@ -38,9 +38,9 @@ if (!authData.user) {
 form.addEventListener('submit', async event => {
   event.preventDefault();
   button.disabled = true;
-  button.textContent = 'Redeeming…';
+  button.textContent = 'Redeemingâ€¦';
   rewardBox.classList.add('hidden');
-  showStatus('Checking your code…');
+  showStatus('Checking your codeâ€¦');
 
   try {
     const result = await redeemRewardCode(input.value);

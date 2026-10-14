@@ -9,6 +9,8 @@ import {
   normalizeRevealOptions,
   REVEAL_PRESENTATION_VERSION,
   revealSfxForRarity,
+  setSoundEffectsEnabled,
+  soundEffectsEnabled,
   summarizeRevealCards
 } from '../docs/js/reward-reveal.js';
 
@@ -186,8 +188,8 @@ test('locks the approved reveal presentation and motion baseline', async () => {
   const stylesheet = await readFile(new URL('../docs/css/reward-reveal.css', import.meta.url), 'utf8');
   const contractHash = createHash('sha256').update(normalizeMotionContract(stylesheet)).digest('hex');
 
-  assert.equal(REVEAL_PRESENTATION_VERSION, '1.5.18');
-  assert.match(stylesheet, /Approved reveal presentation baseline: v1\.5\.18/);
+  assert.equal(REVEAL_PRESENTATION_VERSION, '1.5.19');
+  assert.match(stylesheet, /Approved reveal presentation baseline: v1\.5\.19/);
   assert.equal(contractHash, '15a418208b0fe1d208ab050955c7254722d2e80a884d84a92ac57ef2af6c8377');
   assert.match(stylesheet, /\.st-r3-overlay\.is-embed-anchored/);
   assert.match(stylesheet, /\.st-r3-skip-bar/);
@@ -256,7 +258,7 @@ test('keeps every production reward entry point on the canonical reveal engine',
   ].map(file => readFile(new URL(`../docs/js/pages/${file}`, import.meta.url), 'utf8')));
 
   consumers.forEach(source => {
-    assert.match(source, /reward-reveal\.js\?v=1\.5\.18/);
+    assert.match(source, /reward-reveal\.js\?v=1\.5\.19/);
     assert.match(source, /revealRewardSequence\s*\(/);
     assert.doesNotMatch(source, /@keyframes|stR3CardSpin|stR3PackTop/);
   });
@@ -268,15 +270,47 @@ test('offers Reveal All and Skip as presentation-only shortcuts to results', asy
   assert.match(script, /st-r3-skip-bar/);
   assert.match(script, /Reveal All/);
   assert.match(script, /Skip to results/);
-  assert.match(
-    script,
-    /\/\*\* Presentation-only shortcut — never awards inventory\. \*\/[\s\S]*const skipToResults = async/
-  );
+  assert.match(script, /Presentation-only shortcut[^\n]*never awards inventory[\s\S]*const skipToResults = async/);
   assert.doesNotMatch(script, /skipToResults[\s\S]{0,400}\b(open_daily_booster|grant|insert|upsert|rpc\()/);
   assert.match(script, /revealAllButton\.addEventListener\('click'[\s\S]*skipToResults/);
   assert.match(script, /skipButton\.addEventListener\('click'[\s\S]*skipToResults/);
   assert.match(script, /skipBar\.hidden = !canSkip \|\| rewards\.length <= 1/);
   assert.match(script, /index = rewards\.length;[\s\S]*showResults\(\)/);
+});
+
+test('persists in-reveal sound mute without touching inventory APIs', () => {
+  const store = new Map();
+  const win = {
+    localStorage: {
+      getItem(key) {
+        return store.has(key) ? store.get(key) : null;
+      },
+      setItem(key, value) {
+        store.set(key, String(value));
+      }
+    }
+  };
+
+  assert.equal(soundEffectsEnabled(win), true);
+  setSoundEffectsEnabled(win, false);
+  assert.equal(soundEffectsEnabled(win), false);
+  assert.equal(store.get('sora-starlight-card-binder-v7-sfx'), 'off');
+  setSoundEffectsEnabled(win, true);
+  assert.equal(soundEffectsEnabled(win), true);
+});
+
+test('wires a header sound toggle that only stops audio when muted', async () => {
+  const [script, stylesheet] = await Promise.all([
+    readFile(new URL('../docs/js/reward-reveal.js', import.meta.url), 'utf8'),
+    readFile(new URL('../docs/css/reward-reveal.css', import.meta.url), 'utf8')
+  ]);
+
+  assert.match(script, /st-r3-sound/);
+  assert.match(script, /setSoundEffectsEnabled\(win, sfxEnabled\)/);
+  assert.match(script, /if \(!sfxEnabled\) stopAudio\(\)/);
+  assert.doesNotMatch(script, /soundButton\.addEventListener[\s\S]{0,300}\b(open_daily_booster|grant|rpc\()/);
+  assert.match(stylesheet, /\.st-r3-header-actions/);
+  assert.match(stylesheet, /\.st-r3-sound\.is-muted/);
 });
 
 test('restores focus to the control that launched an embedded reveal', async () => {

@@ -19,19 +19,19 @@ Canonical guidance: `AGENTS.md`. Active milestone: **V1.0 — Foundation**, plus
 ### Shared experience — home featured sets
 - Home **Featured sets** strip uses live card catalog (`8c66c6b`). Verified live: `homeFeaturedSets` + `home-featured-sets.js` on Pages.
 
-### Pack opening — Reveal All / Skip
-- Canonical reveal engine `v1.5.18`: presentation-only **Reveal All** and **Skip to results** (never grants inventory).
-- Consumers bumped to `reward-reveal.js?v=1.5.18`. Motion contract hash unchanged.
+### Pack opening — Reveal All / Skip + sound mute
+- Reveal engine `v1.5.18` (`c555138`): presentation-only **Reveal All** / **Skip to results**.
+- Reveal engine `v1.5.19`: in-reveal **Sound/Muted** toggle persists via existing SFX localStorage key; muting stops active audio only (no inventory side effects).
 
 ## Current task
 
-Continue slice 3 fanfare: in-reveal sound mute control (localStorage already gates SFX), then restrained rarity polish / reduced-motion spot-check. Then slice 4 collection/progression. Authenticated Daily Pack open/replay smoke still needs QA credentials.
+Verify Pages serves `reward-reveal.js?v=1.5.19`. Continue slice 3 reduced-motion / rarity restraint spot-check, then slice 4 collection/progression. Authenticated Daily Pack smoke still needs QA credentials.
 
 ## Validation evidence
 
-- Commits on `main`: `df258b2` (recovery), `8c66c6b` (home featured), pending Reveal All/Skip.
-- `npm run check`: 216 pass (Reveal All/Skip tests included).
-- Local DB suite + concurrency PASS; production overloads + grants verified; mode unchanged.
+- Commits: `df258b2` recovery, `8c66c6b` home, `c555138` Reveal All/Skip, pending sound mute.
+- `npm run check`: 218 pass.
+- Local DB suite + concurrency PASS; production mode unchanged at unlimited.
 
 ## Unresolved / watch
 

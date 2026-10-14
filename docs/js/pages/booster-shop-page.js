@@ -3,7 +3,7 @@ import { supabase } from '../supabase-client.js';
 import { getStarBitsExchangePreview } from '../star-bits-service.js';
 import { openStarBitsBoosterById } from '../daily-booster-service.js';
 import { applyAwardedCardsToLocalStore, captureOwnershipEpoch } from '../collection-local-store.js';
-import { revealRewardSequence } from '../reward-reveal.js?v=1.5.18';
+import { revealRewardSequence } from '../reward-reveal.js?v=1.5.19';
 import { getCachedWebsiteContent } from '../website-content-hydrate.js';
 import { maybeCelebrateSeriesCompletions } from '../series-complete-celebration.js?v=1.0.0';
 import { notifyShellEconomyChanged } from '../shell-economy.js';
@@ -85,7 +85,7 @@ function updateWalletChrome(){
       ? (shopCopy.walletReadyNote || 'Ready for your next pull')
       : (shopCopy.walletEmptyNote || 'Convert extras to earn more');
   }else{
-    balanceEl.textContent='—';
+    balanceEl.textContent='â€”';
     walletNote.textContent=shopCopy.walletSignedOutNote || 'Sign in to use Star Bits';
   }
 }
@@ -118,8 +118,8 @@ function summarizeBooster(booster){
     const qty=Number(slot.quantity)||0;
     const rates=(slot.booster_slot_rates||[]).filter(rate=>Number(rate.percentage)>0);
     const label=rates.length===1?rates[0].rarity:slot.name;
-    return `${qty} × ${label}`;
-  }).join(' • ');
+    return `${qty} Ã— ${label}`;
+  }).join(' â€¢ ');
 }
 function sortedBoosters(){
   let list=[...boosterData];
@@ -168,7 +168,7 @@ function render(){
         <div class="pack-price">${starBitIconHtml(escapeHTML, { size: 'md' })}<span>${cost.toLocaleString()}</span></div>
         <div class="pack-actions">
           ${packActionHtml(booster)}
-          <button class="details-button" type="button" data-details="${escapeHTML(booster.id)}">${escapeHTML(shopCopy.whatsInsideCta||'What’s Inside?')}</button>
+          <button class="details-button" type="button" data-details="${escapeHTML(booster.id)}">${escapeHTML(shopCopy.whatsInsideCta||'Whatâ€™s Inside?')}</button>
         </div>
       </div>
     </article>`;
@@ -341,7 +341,7 @@ function openPurchaseModal(booster,button){
   pendingPurchase={booster,button,cost};
   purchaseImage.src=booster.pack_image_url||FALLBACK_PACK;
   purchaseImage.alt=`${booster.name} booster pack`;
-  purchaseTitle.textContent=`Open “${booster.name}”?`;
+  purchaseTitle.textContent=`Open â€œ${booster.name}â€?`;
   purchaseDescription.textContent='This booster will open immediately and the cards will be saved to your collection.';
   if (purchaseCostAmount) {
     purchaseCostAmount.textContent = `${cost.toLocaleString()} Star Bits`;
@@ -361,8 +361,8 @@ async function confirmPurchase(){
   if(busy||!pendingPurchase)return;
   const {booster,button}=pendingPurchase;
   busy=true;
-  purchaseConfirm.disabled=true;purchaseCancel.disabled=true;purchaseConfirm.textContent='Opening…';
-  button.disabled=true;button.textContent='Opening…';
+  purchaseConfirm.disabled=true;purchaseCancel.disabled=true;purchaseConfirm.textContent='Openingâ€¦';
+  button.disabled=true;button.textContent='Openingâ€¦';
   try{
     purchaseModalController.close(undefined,'purchase');
     const epoch = captureOwnershipEpoch();
@@ -402,9 +402,9 @@ featuredStage.addEventListener('click',event=>{
 
 async function load(){
   try{
-    say('');packsEl.innerHTML='<div class="empty">Preparing the Starlight Card Shop…</div>';
-    balanceEl.textContent='—';
-    walletNote.textContent='Checking account…';
+    say('');packsEl.innerHTML='<div class="empty">Preparing the Starlight Card Shopâ€¦</div>';
+    balanceEl.textContent='â€”';
+    walletNote.textContent='Checking accountâ€¦';
     const [{data:userData},{data:boosters,error:boosterError},{data:slots,error:slotError}] = await Promise.all([
       supabase.auth.getUser(),
       supabase.from('booster_types').select('id,name,description,star_bits_cost,pack_image_url,card_back_url,reward_mode,series_id,card_count,bonus_star_bits,sort_order').eq('is_active',true).eq('archived',false).gt('star_bits_cost',0).order('sort_order'),

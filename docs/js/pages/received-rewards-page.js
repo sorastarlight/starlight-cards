@@ -1,5 +1,5 @@
 import { getReceivedRewards, claimReceivedReward, dismissReceivedReward } from '../received-rewards-service.js';
-import { revealRewardSequence } from '../reward-reveal.js?v=1.5.18';
+import { revealRewardSequence } from '../reward-reveal.js?v=1.5.19';
 import { getCachedWebsiteContent } from '../website-content-hydrate.js';
 import { maybeCelebrateSeriesCompletions } from '../series-complete-celebration.js?v=1.0.0';
 import { notifyShellEconomyChanged } from '../shell-economy.js';
@@ -47,9 +47,9 @@ function sourceLabel(r) {
 
 function render() {
   const rows = rewards.filter(r => filter === 'all' || r.status === filter);
-  const emptyTitle = esc(rewardsCopy.emptyTitle || 'No gifts here right now ✨');
+  const emptyTitle = esc(rewardsCopy.emptyTitle || 'No gifts here right now âœ¨');
   const emptyLead = esc(rewardsCopy.emptyLead || 'Twitch redeems, codes, and gifts will appear here.');
-  list.innerHTML = rows.map(r => `<article id="gift-${esc(r.id)}" class="reward ${esc(r.status)}"><div class="icon">${r.sourceType === 'twitch' ? '📺' : r.sourceType === 'reward_code' ? '🎟️' : '🎁'}</div><div><h2>${esc(r.title)}</h2><div class="preview"><span class="chip">${labelHtml(r)}</span><span class="chip">${esc(sourceLabel(r))}</span><span class="chip">${r.status === 'pending' ? 'Ready to Open' : 'Claimed'}</span></div><p class="desc">${esc(r.message || 'A Starlight reward is waiting for you.')}</p><div class="meta">Received ${new Date(r.createdAt).toLocaleString()}${r.claimedAt ? ` · Claimed ${new Date(r.claimedAt).toLocaleString()}` : ''}</div></div><div class="actions">${r.status === 'pending' ? `<button class="btn claim" data-claim="${r.id}">Open Reward</button>` : `<button class="btn secondary" data-dismiss="${r.id}">Remove</button>`}</div></article>`).join('')
+  list.innerHTML = rows.map(r => `<article id="gift-${esc(r.id)}" class="reward ${esc(r.status)}"><div class="icon">${r.sourceType === 'twitch' ? 'ðŸ“º' : r.sourceType === 'reward_code' ? 'ðŸŽŸï¸' : 'ðŸŽ'}</div><div><h2>${esc(r.title)}</h2><div class="preview"><span class="chip">${labelHtml(r)}</span><span class="chip">${esc(sourceLabel(r))}</span><span class="chip">${r.status === 'pending' ? 'Ready to Open' : 'Claimed'}</span></div><p class="desc">${esc(r.message || 'A Starlight reward is waiting for you.')}</p><div class="meta">Received ${new Date(r.createdAt).toLocaleString()}${r.claimedAt ? ` Â· Claimed ${new Date(r.claimedAt).toLocaleString()}` : ''}</div></div><div class="actions">${r.status === 'pending' ? `<button class="btn claim" data-claim="${r.id}">Open Reward</button>` : `<button class="btn secondary" data-dismiss="${r.id}">Remove</button>`}</div></article>`).join('')
     || `<div class="empty"><h2>${emptyTitle}</h2><p>${emptyLead}</p></div>`;
   document.querySelectorAll('[data-claim]').forEach(b => { b.onclick = () => claim(b.dataset.claim); });
   document.querySelectorAll('[data-dismiss]').forEach(b => {
@@ -63,7 +63,7 @@ function render() {
 
 async function claim(id) {
   try {
-    status.textContent = 'Opening your reward…';
+    status.textContent = 'Opening your rewardâ€¦';
     const reward = rewards.find(item => String(item.id) === String(id));
     const out = await claimReceivedReward(id);
     const snapshot = out?.snapshot?.result || out?.snapshot || {};

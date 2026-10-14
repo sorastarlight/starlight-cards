@@ -247,7 +247,7 @@ function acquireRevealViewportLock(doc) {
   };
 }
 
-export const REVEAL_PRESENTATION_VERSION = '1.5.18';
+export const REVEAL_PRESENTATION_VERSION = '1.5.19';
 
 const REVEAL_STYLESHEET_ID = `starlight-reveal-v${REVEAL_PRESENTATION_VERSION.replace(/\./g, '')}`;
 const REVEAL_STYLESHEET_URL = new URL(
@@ -438,12 +438,31 @@ function createRepeatedElements(doc, parent, count, className, propertyName) {
   }
 }
 
-function soundEffectsEnabled(win) {
+export function soundEffectsEnabled(win = globalThis) {
   try {
     return win.localStorage?.getItem(SFX_SETTING_KEY) !== 'off';
   } catch (_) {
     return true;
   }
+}
+
+export function setSoundEffectsEnabled(win, enabled) {
+  try {
+    win.localStorage?.setItem(SFX_SETTING_KEY, enabled ? 'on' : 'off');
+  } catch (_) {
+    // Preference persistence is best-effort.
+  }
+  return Boolean(enabled);
+}
+
+function syncSoundToggle(button, enabled) {
+  button.classList.toggle('is-muted', !enabled);
+  button.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+  button.setAttribute(
+    'aria-label',
+    enabled ? 'Mute reveal sounds' : 'Unmute reveal sounds'
+  );
+  button.textContent = enabled ? 'Sound' : 'Muted';
 }
 
 function playRevealSound(win, name, activeAudio) {
@@ -522,7 +541,11 @@ export async function revealRewardSequence(cards = [], options = {}) {
     const headerCopy = createElement(doc, 'div', 'st-r3-header-copy');
     const eyebrow = createElement(doc, 'p', 'st-r3-eyebrow', revealCopy.eyebrow || 'Starlight Booster');
     const title = createElement(doc, 'h2', 'st-r3-title', revealTitle);
+    const headerActions = createElement(doc, 'div', 'st-r3-header-actions');
+    const soundButton = createElement(doc, 'button', 'st-r3-sound');
     const closeButton = createElement(doc, 'button', 'st-r3-close', '×');
+    let sfxEnabled = soundEffectsEnabled(win);
+    syncSoundToggle(soundButton, sfxEnabled);
     const liveStatus = createElement(
       doc,
       'p',
@@ -597,9 +620,11 @@ export async function revealRewardSequence(cards = [], options = {}) {
     const doneButton = createElement(doc, 'button', 'st-r3-done', revealCopy.doneCta || 'Done');
 
     title.id = `st-r3-title-${win.crypto?.randomUUID?.() || Date.now().toString(36)}`;
+    soundButton.type = 'button';
     closeButton.type = 'button';
     closeButton.setAttribute('aria-label', revealCopy.closeLabel || 'Close booster reveal');
     closeButton.setAttribute('data-st-modal-close', '');
+    headerActions.append(soundButton, closeButton);
     liveStatus.setAttribute('role', 'status');
     liveStatus.setAttribute('aria-live', 'polite');
     dialog.setAttribute('role', 'dialog');
@@ -662,7 +687,7 @@ export async function revealRewardSequence(cards = [], options = {}) {
     skipBar.append(revealAllButton, skipButton);
     stage.append(packScene, pileScene, revealScene, resultsScene);
     headerCopy.append(eyebrow, title);
-    header.append(headerCopy, closeButton);
+    header.append(headerCopy, headerActions);
     dialog.append(header, liveStatus, progress, skipBar, stage);
     overlay.append(dialog);
     overlay.hidden = true;
@@ -954,6 +979,12 @@ export async function revealRewardSequence(cards = [], options = {}) {
     });
     skipButton.addEventListener('click', () => {
       void skipToResults({ openPackFirst: phase === 'pack' });
+    });
+    soundButton.addEventListener('click', () => {
+      sfxEnabled = !sfxEnabled;
+      setSoundEffectsEnabled(win, sfxEnabled);
+      syncSoundToggle(soundButton, sfxEnabled);
+      if (!sfxEnabled) stopAudio();
     });
     doneButton.addEventListener('click', () => close('complete'));
     resultsScene.addEventListener('click', event => {

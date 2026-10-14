@@ -16,7 +16,7 @@ import {
   notifyShellEconomyChanged
 } from '../shell-economy.js';
 import { notifyShellFeedChanged } from '../shell-feed-notify.js';
-import { revealRewardSequence } from '../reward-reveal.js?v=1.5.18';
+import { revealRewardSequence } from '../reward-reveal.js?v=1.5.19';
 import { getPublicBoosterConfig } from '../booster-config-service.js';
 import { getCachedWebsiteContent } from '../website-content-hydrate.js';
 import { maybeCelebrateSeriesCompletions } from '../series-complete-celebration.js?v=1.0.0';
@@ -108,7 +108,7 @@ function setViewTodayVisible(visible, { label = null } = {}) {
   if (visible && label) {
     viewToday.textContent = label;
   } else if (visible && !viewToday.textContent.trim()) {
-    viewToday.textContent = dailyCopy.viewTodayCta || "View today’s cards";
+    viewToday.textContent = dailyCopy.viewTodayCta || "View todayâ€™s cards";
   }
 }
 
@@ -171,7 +171,7 @@ function render(cards, title = dailyCopy.pullsTitle || 'Your Pulls', { epoch = n
         ? 'Duplicate Pull'
         : 'New Card!';
     const pillClass = replay ? 'replay' : card.isDuplicate ? 'duplicate' : '';
-    item.innerHTML = `<span class="reward-card-art"><img src="${art}" alt="${name} card artwork"></span><h3>#${number} ${name}</h3><p>${rarity} • ${series}</p>${quantityLine}<span class="reward-pill ${pillClass}">${pill}</span>`;
+    item.innerHTML = `<span class="reward-card-art"><img src="${art}" alt="${name} card artwork"></span><h3>#${number} ${name}</h3><p>${rarity} â€¢ ${series}</p>${quantityLine}<span class="reward-pill ${pillClass}">${pill}</span>`;
     rewardGrid.append(item);
   }
   rewardSection.classList.remove('hidden');
@@ -190,7 +190,7 @@ function setPortalChecking() {
   packLabel.textContent = dailyCopy.checkingPackLabel || 'Checking availability';
   heading.textContent = dailyCopy.checkingTitle || 'Checking availability';
   description.textContent =
-    dailyCopy.checkingLead || 'Confirming your Free Daily Starlight Pack status…';
+    dailyCopy.checkingLead || 'Confirming your Free Daily Starlight Pack statusâ€¦';
   countdown.classList.add('hidden');
   signIn.classList.add('hidden');
 }
@@ -227,7 +227,7 @@ function setPortalReady(
   heading.textContent = dailyCopy.readyTitle || 'Your Free Pack Is Ready!';
   description.textContent = showView
     ? dailyCopy.readyWithRecoveryLead ||
-      "Your Free Pack is ready again. You can also view today’s interrupted results without opening another pack."
+      "Your Free Pack is ready again. You can also view todayâ€™s interrupted results without opening another pack."
     : dailyCopy.readyLead || "Click the pack to view today's cards.";
   countdown.classList.add('hidden');
   setViewTodayVisible(showView, {
@@ -263,14 +263,14 @@ function setPortalClaimed(data, { showView = false, epoch = null, replay = false
       data.cardsAwarded,
       replay
         ? dailyCopy.replayResultsTitle || 'Cards already received today'
-        : dailyCopy.resultsTitle || "Here Are Today’s Free Daily Starlight Pack Results",
+        : dailyCopy.resultsTitle || "Here Are Todayâ€™s Free Daily Starlight Pack Results",
       { epoch, replay }
     );
   } else {
     clearRewardResults();
   }
   setViewTodayVisible(showView, {
-    label: dailyCopy.viewTodayCta || "View today’s cards"
+    label: dailyCopy.viewTodayCta || "View todayâ€™s cards"
   });
   pendingRecovery = showView
     ? {
@@ -291,14 +291,14 @@ function setPortalRecovery(data, { epoch = null } = {}) {
   portal.classList.add('is-locked');
   pack.disabled = true;
   setPackBusy(false);
-  packLabel.textContent = dailyCopy.recoveryPackLabel || 'Pack Claimed — View Results';
-  heading.textContent = dailyCopy.recoveryTitle || "Today’s cards are ready to view";
+  packLabel.textContent = dailyCopy.recoveryPackLabel || 'Pack Claimed â€” View Results';
+  heading.textContent = dailyCopy.recoveryTitle || "Todayâ€™s cards are ready to view";
   description.textContent =
     dailyCopy.recoveryLead ||
-    'Your Free Daily Starlight Pack was already claimed. View today’s cards without opening another pack.';
+    'Your Free Daily Starlight Pack was already claimed. View todayâ€™s cards without opening another pack.';
   startCountdown(data.nextClaimAt);
   setViewTodayVisible(true, {
-    label: data.viewLatestLabel || dailyCopy.viewTodayCta || "View today’s cards"
+    label: data.viewLatestLabel || dailyCopy.viewTodayCta || "View todayâ€™s cards"
   });
   pendingRecovery = {
     cards: data.cards || [],
@@ -332,13 +332,13 @@ function showStatusRetry(message, { epoch = null } = {}) {
   heading.textContent = dailyCopy.statusRetryTitle || 'Could not confirm pack status';
   description.textContent =
     dailyCopy.statusRetryLead ||
-    'Your claim may already be saved. Use Retry status to recover today’s cards — this never opens another pack.';
+    'Your claim may already be saved. Use Retry status to recover todayâ€™s cards â€” this never opens another pack.';
   countdown.classList.add('hidden');
   setRetryStatusVisible(true);
   status(
     message ||
       dailyCopy.statusRetryStatus ||
-      'Could not confirm today’s claim. Retry status when ready.',
+      'Could not confirm todayâ€™s claim. Retry status when ready.',
     'error'
   );
 }
@@ -348,7 +348,7 @@ async function playOpening(cards, title, { epoch, markComplete = true, mode = 'c
   const isReplay = mode === 'replay';
   await revealRewardSequence(cards, {
     title: isReplay
-      ? dailyCopy.replayRevealTitle || "Today’s Free Daily Starlight Pack Results"
+      ? dailyCopy.replayRevealTitle || "Todayâ€™s Free Daily Starlight Pack Results"
       : 'Free Daily Starlight Pack',
     packImageUrl: packImage.currentSrc || packImage.src,
     autoOpen: true,
@@ -359,7 +359,7 @@ async function playOpening(cards, title, { epoch, markComplete = true, mode = 'c
   }
 
   if (isReplay) {
-    // Reconcile ownership from cloud — never re-apply awards or emit grant notifications.
+    // Reconcile ownership from cloud â€” never re-apply awards or emit grant notifications.
     notifyShellCollectionReconcile({ source: 'daily-booster-replay' });
     if (ownershipEpochMatches(openEpoch)) {
       render(
@@ -419,7 +419,7 @@ function applyReconciledState(reconciled, { epoch = null } = {}) {
         label:
           reconciled.viewLatestLabel ||
           dailyCopy.viewLatestCta ||
-          (reconciled.mode === 'unlimited' ? 'View latest pack' : "View today’s cards")
+          (reconciled.mode === 'unlimited' ? 'View latest pack' : "View todayâ€™s cards")
       });
       pendingRecovery = {
         cards: reconciled.cards || [],
@@ -500,7 +500,7 @@ async function initialize() {
   if (receipt?.corrupt) {
     clearDailyReceipt(activeOwnerId);
   } else if (receipt && !receipt.corrupt && receipt.claimDate !== today) {
-    // Midnight America/New_York rolled over — discard yesterday's display hint.
+    // Midnight America/New_York rolled over â€” discard yesterday's display hint.
     clearDailyReceipt(activeOwnerId);
   }
 
@@ -564,7 +564,7 @@ async function recoverLostClaimResponse(openEpoch) {
       mode: opening.mode,
       viewActionKind: opening.mode === 'unlimited' ? 'view-latest' : 'claimed-recovery',
       viewLatestLabel:
-        opening.mode === 'unlimited' ? 'View latest pack' : "View today’s cards"
+        opening.mode === 'unlimited' ? 'View latest pack' : "View todayâ€™s cards"
     };
     applyReconciledState(reconciled, { epoch: openEpoch });
     status(
@@ -606,7 +606,7 @@ async function recoverLostClaimResponse(openEpoch) {
     applyReconciledState(outcome.reconciled, { epoch: openEpoch });
     status(
       dailyCopy.recoveryStatus ||
-        'Your pack was already claimed. Use View today’s cards to see the results.',
+        'Your pack was already claimed. Use View todayâ€™s cards to see the results.',
       'success'
     );
     return { recovered: true, reconciled: outcome.reconciled };
@@ -630,14 +630,14 @@ async function openPackFlow() {
       claimDate: easternClaimDate()
     });
     if (!ownershipEpochMatches(openEpoch)) {
-      status('Account changed while opening the pack. Refreshing…', 'error');
+      status('Account changed while opening the pack. Refreshingâ€¦', 'error');
       clearStalePresentation();
       await initialize();
       return;
     }
 
     if (result?.alreadyClaimed) {
-      // Same-day daily slot already taken — never grant again.
+      // Same-day daily slot already taken â€” never grant again.
       const cards = normalizeDailyAwardCards(result.cards || result.cardsAwarded);
       if (cards.length) {
         writeDailyReceipt(activeOwnerId, {
@@ -665,7 +665,7 @@ async function openPackFlow() {
         );
         status(
           dailyCopy.recoveryStatus ||
-            'Your pack was already claimed. Use View today’s cards to see the results.',
+            'Your pack was already claimed. Use View todayâ€™s cards to see the results.',
           'success'
         );
         return;
@@ -680,7 +680,7 @@ async function openPackFlow() {
         if (recovered.reason === 'status-error') {
           showStatusRetry(
             recovered.error?.message ||
-              'Could not confirm today’s claim status. Retry status — this will not open another pack.',
+              'Could not confirm todayâ€™s claim status. Retry status â€” this will not open another pack.',
             { epoch: openEpoch }
           );
           return;
@@ -709,7 +709,7 @@ async function openPackFlow() {
     const isReplay = Boolean(result?.idempotentReplay);
     const title = isReplay
       ? dailyCopy.replayResultsTitle || 'Cards already received today'
-      : dailyCopy.resultsTitle || "Here Are Today’s Free Daily Starlight Pack Results";
+      : dailyCopy.resultsTitle || "Here Are Todayâ€™s Free Daily Starlight Pack Results";
     await playOpening(cards, title, {
       epoch: openEpoch,
       markComplete: true,
@@ -760,14 +760,14 @@ async function openPackFlow() {
       location.origin
     );
   } catch (error) {
-    // Ambiguous failure after a possible commit: recover by request id / status — never new UUID.
+    // Ambiguous failure after a possible commit: recover by request id / status â€” never new UUID.
     const recovered = await recoverLostClaimResponse(openEpoch);
     if (!recovered.recovered) {
       if (recovered.reason === 'status-error') {
         showStatusRetry(
           recovered.error?.message ||
             error.message ||
-            'Could not confirm today’s claim status. Retry status — this will not open another pack.',
+            'Could not confirm todayâ€™s claim status. Retry status â€” this will not open another pack.',
           { epoch: openEpoch }
         );
       } else if (recovered.reason === 'stale-epoch') {
@@ -792,7 +792,7 @@ async function retryStatusFlow() {
   setRetryStatusVisible(false);
   const retryEpoch = captureOwnershipEpoch();
   try {
-    // Manual, single status read — never openDailyBooster, never auto-loop.
+    // Manual, single status read â€” never openDailyBooster, never auto-loop.
     setPortalChecking();
     status('');
     const { data, error: authError } = await supabase.auth.getUser();
@@ -821,7 +821,7 @@ async function retryStatusFlow() {
     });
     if (outcome.action === 'retry-status') {
       showStatusRetry(
-        outcome.error?.message || 'Could not confirm today’s claim status. Try again when ready.',
+        outcome.error?.message || 'Could not confirm todayâ€™s claim status. Try again when ready.',
         { epoch: retryEpoch }
       );
       return;
@@ -841,7 +841,7 @@ async function retryStatusFlow() {
       applyReconciledState(outcome.reconciled, { epoch: retryEpoch });
       status(
         dailyCopy.recoveryStatus ||
-          'Your pack was already claimed. Use View today’s cards to see the results.',
+          'Your pack was already claimed. Use View todayâ€™s cards to see the results.',
         'success'
       );
       return;
@@ -862,7 +862,7 @@ async function viewTodayFlow() {
   setRetryStatusVisible(false);
   const viewEpoch = captureOwnershipEpoch();
   try {
-    // Reconcile with server immediately before reveal — never open with a new request id.
+    // Reconcile with server immediately before reveal â€” never open with a new request id.
     const { status: daily, error } = await getDailyBoosterStatus();
     if (!ownershipEpochMatches(viewEpoch)) {
       clearStalePresentation();
@@ -902,11 +902,11 @@ async function viewTodayFlow() {
     }
     applyReconciledState(reconciled, { epoch: viewEpoch });
   } catch (error) {
-    status(error.message || 'Could not show today’s cards.', 'error');
+    status(error.message || 'Could not show todayâ€™s cards.', 'error');
     setViewTodayVisible(true, {
       label: pendingRecovery?.viewActionKind === 'view-latest'
         ? dailyCopy.viewLatestCta || 'View latest pack'
-        : dailyCopy.viewTodayCta || "View today’s cards"
+        : dailyCopy.viewTodayCta || "View todayâ€™s cards"
     });
   } finally {
     isBusy = false;

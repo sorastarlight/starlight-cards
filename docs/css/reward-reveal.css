@@ -1,5 +1,5 @@
 /*
- * Approved reveal presentation baseline: v1.5.18.
+ * Approved reveal presentation baseline: v1.5.19.
  * Keep its motion contract intact unless this version and its regression test
  * are intentionally advanced together.
  */
@@ -176,6 +176,40 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.st-r3-header-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto;
+}
+.st-r3-sound {
+  display: grid;
+  min-width: 72px;
+  height: 42px;
+  margin: 0;
+  padding: 0 12px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.44);
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(17, 20, 47, 0.9);
+  box-shadow: 0 7px 24px rgba(0, 0, 0, 0.24);
+  font: 800 0.72rem/1 "Segoe UI", system-ui, sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.st-r3-sound.is-muted {
+  border-color: rgba(255, 255, 255, 0.28);
+  color: rgba(255, 255, 255, 0.78);
+  background: rgba(17, 20, 47, 0.72);
+}
+.st-r3-sound:hover,
+.st-r3-close:hover {
+  border-color: #ffbde8;
+  background: #31254f;
+}
 .st-r3-close {
   display: grid;
   flex: 0 0 42px;
@@ -193,10 +227,7 @@
   cursor: pointer;
   pointer-events: auto;
 }
-.st-r3-close:hover {
-  border-color: #ffbde8;
-  background: #31254f;
-}
+.st-r3-sound:focus-visible,
 .st-r3-close:focus-visible,
 .st-r3-pack-button:focus-visible,
 .st-r3-pile-button:focus-visible,
