@@ -112,23 +112,6 @@ export function shouldAcceptEmbeddedHandshake({
   if (requireFrameSrcMatch && routeSrc && !frameHrefMatchesRouteSrc(frameHref, routeSrc)) {
     return false;
   }
-  // When both sides carry a token, the live frame query should agree when present.
-  const token = messageLoadToken == null || messageLoadToken === ''
-    ? null
-    : String(messageLoadToken);
-  const expected = currentLoadToken == null || currentLoadToken === ''
-    ? null
-    : String(currentLoadToken);
-  if (token && expected && frameHref) {
-    try {
-      const live = new URL(frameHref, 'https://starlight.invalid').searchParams.get('shellLoad');
-      if (live && live !== expected) {
-        return false;
-      }
-    } catch {
-      return false;
-    }
-  }
   return true;
 }
 

@@ -183,6 +183,10 @@ if (!embedded && shouldRedirectToShell()) {
     if (data.type === 'starlight-shell-layout') {
       document.documentElement.dataset.shellLayout = data.layout === 'hybrid' ? 'hybrid' : 'masthead';
     }
+    if (data.type === 'starlight-shell-request-ready') {
+      announceReady();
+      return;
+    }
     if (data.type === 'starlight-sfx' && typeof data.sfxOn === 'boolean') {
       try {
         localStorage.setItem('sora-starlight-card-binder-v7-sfx', data.sfxOn ? 'on' : 'off');

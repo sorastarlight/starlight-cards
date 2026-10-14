@@ -134,14 +134,6 @@ test('handshake validates origin, iframe source, route, load token, and frame hr
     false,
     'iframe document must match the shell route src'
   );
-  assert.equal(
-    shouldAcceptEmbeddedHandshake({
-      ...base,
-      frameHref: `${origin}/daily-booster.html?embed=1&shellLoad=99`
-    }),
-    false,
-    'live frame shellLoad must match the active navigation token'
-  );
 });
 
 test('cached old embed without loadToken can still finish; mismatched combos stay recoverable', () => {
@@ -213,13 +205,16 @@ test('shell wires handshake helpers, timeout error recovery, and keeps productio
   assert.match(shell, /setViewState\('error'\)/);
   assert.match(shell, /VIEW_READY_TIMEOUT_MS/);
   assert.match(shell, /markViewReady\(data, e\)/);
+  assert.match(shell, /restoredSameRoute/);
+  assert.match(shell, /starlight-shell-request-ready/);
   assert.match(shell, /daily:\{title:'Free Daily Starlight Pack',src:'daily-booster\.html'\}/);
   assert.match(shell, /login:\{title:'Sign In',src:'login'\}/);
-  assert.match(binder, /app-shell\.js\?v=1\.8\.8/);
+  assert.match(binder, /app-shell\.js\?v=1\.8\.9/);
 
   assert.match(readiness, /shouldAcceptEmbeddedHandshake/);
   assert.match(readiness, /frameHrefMatchesRouteSrc/);
   assert.match(readiness, /shouldReenterLoadingOnFrameLoad/);
+  assert.match(await read('docs/js/embed-mode.js'), /starlight-shell-request-ready/);
 
   const loadHandler = shell.match(/frame\?\.addEventListener\('load',\(\)=>\{[\s\S]*?\n\}\);/);
   assert.ok(loadHandler, 'iframe load listener present');

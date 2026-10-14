@@ -21,12 +21,13 @@ import { getMyProfileExtras } from './profile-extras-service.js';
 import { applyDailyNavReadyState } from './daily-nav-indicator.js';
 import { bindOwnershipToAuthUser } from './collection-local-store.js';
 import {
+  frameHrefMatchesRouteSrc,
   readShellViewState,
   shouldAcceptEmbeddedHandshake,
   shouldReenterLoadingOnFrameLoad
 } from './shell-view-readiness.js';
 
-const SHELL_BUILD = '94.5.3';
+const SHELL_BUILD = '94.5.4';
 const VIEW_READY_TIMEOUT_MS = 6500;
 const MAX_VIEW_RETRIES = 1;
 const SFX_KEY = 'sora-starlight-card-binder-v7-sfx';
@@ -242,10 +243,41 @@ function armReadyTimeout(route,token){
   },VIEW_READY_TIMEOUT_MS);
 }
 
+function requestEmbeddedReady(){
+  try{
+    frame?.contentWindow?.postMessage({ type: 'starlight-shell-request-ready' }, location.origin);
+  }catch{
+    /* ignore */
+  }
+}
+
 function loadEmbeddedView(route,{force=false,resetRetry=false}={}){
   if(!frame||!routes[route]?.src)return;
   if(resetRetry)retryCount=0;
   embeddedInitialScrollDone=false;
+  const routeSrc=routes[route].src;
+  const currentHref=getFrameLocation();
+  const restoredSameRoute=force
+    && currentHref
+    && !currentHref.includes('about:blank')
+    && frameHrefMatchesRouteSrc(currentHref, routeSrc);
+
+  // Back/forward often restores the embedded document via session history while the
+  // shell issues a new shellLoad token. Replacing again can race and leave loading
+  // stuck because the live document still carries the previous token. Adopt it.
+  if(restoredSameRoute){
+    let liveToken='';
+    try{ liveToken=new URL(currentHref).searchParams.get('shellLoad')||''; }catch{ /* ignore */ }
+    currentLoadToken=liveToken||Date.now();
+    setViewState('loading');
+    frame.style.height='720px';
+    frame.setAttribute('scrolling','no');
+    frame.dataset.route=route;
+    armReadyTimeout(route,currentLoadToken);
+    requestEmbeddedReady();
+    return;
+  }
+
   currentLoadToken=Date.now();
   const src=buildSrc(route,{retry:retryCount,token:currentLoadToken});
   setViewState('loading');
