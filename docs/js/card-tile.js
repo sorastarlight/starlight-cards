@@ -20,8 +20,11 @@
       ? ctx.fillWebsiteTokens?.(landing.ownedLabel || 'Owned ×{qty}', { qty }) || `Owned ×${qty}`
       : (landing.notCollectedLabel || 'Not Collected');
     const raritySuffix = got ? ` · ${card.rarity || ''}` : '';
+    const ariaLabel = typeof ctx.galleryCardAriaLabel === 'function'
+      ? ctx.galleryCardAriaLabel(card)
+      : `View ${ctx.getVisibleName(card)}`;
     return `<article class="card-gallery-item ${ctx.rarityClass(card)} ${stateClass}${favorited ? ' is-favorite' : ''}" style="--i:${index}">
-    <button class="card-gallery-btn" type="button" data-v61-card="${ctx.esc(card.id)}" aria-label="View ${ctx.esc(ctx.getVisibleName(card))}">
+    <button class="card-gallery-btn" type="button" data-v61-card="${ctx.esc(card.id)}" aria-label="${ctx.esc(ariaLabel)}">
       <span class="card-gallery-art">${ctx.perspectiveArt(card, { imageUrl: img, alt: ctx.getVisibleName(card), visible: ctx.perspectiveArtVisible(card, got) })}</span>
       <span class="card-gallery-number">${ctx.esc(numberLabel)}</span>
       ${favorited ? '<span class="card-gallery-fav" aria-hidden="true">★</span>' : ''}

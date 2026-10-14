@@ -13,6 +13,14 @@ test('shared card tile module renders gallery, album, and list modes', async () 
   assert.match(source, /card-gallery-item/);
   assert.match(source, /card-album-sleeve/);
   assert.match(source, /visible: false/);
+  assert.match(source, /galleryCardAriaLabel/);
+});
+
+test('gallery aria labels keep mystery visuals but name locked cards by number', async () => {
+  const app = await read('docs/js/app.js');
+  assert.match(app, /function galleryCardAriaLabel\(card\)/);
+  assert.match(app, /View uncollected card/);
+  assert.match(app, /galleryCardAriaLabel,/);
 });
 
 test('binder theme config exposes registry and CSS variable hooks', async () => {

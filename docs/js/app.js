@@ -245,6 +245,7 @@ function cardTileContext() {
     perspectiveArt,
     perspectiveArtVisible,
     getVisibleName,
+    galleryCardAriaLabel,
     getVisibleImage,
     displayName,
     cardIdentityChips,
