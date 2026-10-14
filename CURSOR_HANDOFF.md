@@ -12,7 +12,7 @@ Continue from this Games folder clone of `https://github.com/sorastarlight/starl
 | --- | --- |
 | `reward-reveal.js` | **1.5.20** (Skip, Sound, prefersReducedMotion) |
 | `daily-booster-page.js` | **1.7.2** |
-| `card-filters.css?v=1.1.2` | set progress meter present |
+| `card-filters.css?v=1.1.3` | set progress meter + sticky mobile filters |
 | `app.js` | `updateSetProgressMeter` present |
 | `admin-twitch-page.js` | **1.4.2** |
 | Twitch worker `/health` | **1.1.3** ok |
@@ -30,9 +30,9 @@ Production daily mode still **unlimited**. Opening recovery migration applied ea
 
 ## Current task
 
-- Sticky mobile filters (pending commit).
-- Broader a11y/perf matrix still open: zoom/contrast spot-check, slow-network, large-collection stress, authenticated Daily Pack smoke.
+- Broader a11y/perf matrix: zoom/contrast spot-check, slow-network, large-collection stress, authenticated Daily Pack smoke.
 - Deeper Twitch reconciliation dashboards optional.
+- Avoid inactivating in-flight Pages deployments (that cancels `deploy-pages`).
 
 **Blocked:** QA credentials for authenticated live open/replay.
 
