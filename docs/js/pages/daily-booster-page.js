@@ -24,7 +24,7 @@ import {
   resolvePostClaimStatusOutcome,
   shouldClearDisplayedResults,
   writeDailyReceipt
-} from '../daily-booster-receipt.js';
+} from '../daily-booster-receipt.js?v=1.0.1';
 
 let dailyCopy = getCachedWebsiteContent()?.daily || {};
 
