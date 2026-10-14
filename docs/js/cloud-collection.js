@@ -1,20 +1,28 @@
 import { supabase } from "./supabase-client.js";
 import "./card-catalog-service.js";
 
-import { applyAwardedCardsToLocalStore } from "./collection-local-store.js";
+import {
+    ACTIVE_COLLECTION_KEY,
+    ACTIVE_FAVORITES_KEY,
+    ACTIVE_QUANTITIES_KEY,
+    OWNERSHIP_CHANGED_EVENT,
+    OWNERSHIP_META_KEY,
+    BROADCAST_CHANNEL_NAME,
+    applyAwardedCardsToLocalStore,
+    bindOwnershipToAuthUser,
+    captureOwnershipEpoch,
+    ownershipEpochMatches,
+    readOwnershipMeta,
+    replaceActiveOwnershipSnapshot
+} from "./collection-local-store.js";
 import {
     getCurrentUser,
     loadCloudCollection
 } from "./collection-sync.js";
 
-const COLLECTION_KEY =
-    "sora-starlight-card-binder-v5-collected";
-
-const FAVORITES_KEY =
-    "sora-starlight-card-binder-v5-favorites";
-
-const QUANTITIES_KEY =
-    "sora-starlight-card-binder-v80-quantities";
+const COLLECTION_KEY = ACTIVE_COLLECTION_KEY;
+const FAVORITES_KEY = ACTIVE_FAVORITES_KEY;
+const QUANTITIES_KEY = ACTIVE_QUANTITIES_KEY;
 
 const FAVORITE_CHECK_INTERVAL_MS = 1500;
 
@@ -24,6 +32,8 @@ let previousFavoriteStore = {};
 let favoriteSyncQueue = Promise.resolve();
 let collectionRefreshQueue = Promise.resolve();
 let collectionRefreshTimer = null;
+let authLifecycleBound = false;
+let ownershipListenersBound = false;
 
 const COLLECTION_REFRESH_DEBOUNCE_MS = 350;
 
@@ -31,7 +41,11 @@ function shouldRefreshCollectionFromDetail(detail = {}) {
     const type = String(detail.type || "").trim();
     const source = String(detail.source || "").trim().toLowerCase();
 
-    if (type === "starlight-wallet-changed" || type === "starlight-rewards-changed") {
+    if (
+        type === "starlight-wallet-changed" ||
+        type === "starlight-rewards-changed" ||
+        type === "starlight-collection-reconcile"
+    ) {
         return true;
     }
 
@@ -41,10 +55,19 @@ function shouldRefreshCollectionFromDetail(detail = {}) {
 function scheduleCollectionRefresh(detail = {}) {
     if (!currentUser) return;
 
-    const awardedCards = Array.isArray(detail.cards) ? detail.cards : [];
+    const epoch = captureOwnershipEpoch();
+    if (epoch.ownerId !== currentUser.id) return;
+
+    const detailType = String(detail.type || "").trim();
+    const awardedCards =
+        detailType === "starlight-collection-reconcile"
+            ? []
+            : Array.isArray(detail.cards)
+              ? detail.cards
+              : [];
     if (awardedCards.length) {
-        applyAwardedCardsToLocalStore(awardedCards);
-        if (typeof window.renderAll === "function") {
+        applyAwardedCardsToLocalStore(awardedCards, { epoch });
+        if (ownershipEpochMatches(epoch) && typeof window.renderAll === "function") {
             window.renderAll();
         }
     }
@@ -55,10 +78,17 @@ function scheduleCollectionRefresh(detail = {}) {
 
     collectionRefreshTimer = window.setTimeout(() => {
         collectionRefreshTimer = null;
+        const queuedEpoch = captureOwnershipEpoch();
         collectionRefreshQueue = collectionRefreshQueue
             .then(async () => {
-                await synchronizeCloudCollection();
-                if (typeof window.renderAll === "function") {
+                if (!ownershipEpochMatches(queuedEpoch)) return;
+                await synchronizeCloudCollection({
+                    expectedEpoch: queuedEpoch
+                });
+                if (
+                    ownershipEpochMatches(queuedEpoch) &&
+                    typeof window.renderAll === "function"
+                ) {
                     window.renderAll();
                 }
             })
@@ -167,18 +197,80 @@ function createLocalStores(cloudRows) {
     };
 }
 
+function stopFavoriteMonitor() {
+    if (favoriteMonitorTimer) {
+        window.clearInterval(favoriteMonitorTimer);
+        favoriteMonitorTimer = null;
+    }
+    previousFavoriteStore = {};
+}
+
+function resetLocalSyncStateForOwner(user) {
+    currentUser = user || null;
+    stopFavoriteMonitor();
+    favoriteSyncQueue = Promise.resolve();
+    if (collectionRefreshTimer) {
+        window.clearTimeout(collectionRefreshTimer);
+        collectionRefreshTimer = null;
+    }
+    if (currentUser) {
+        previousFavoriteStore = readLocalObject(FAVORITES_KEY);
+        startFavoriteMonitor();
+    }
+}
+
+async function readLiveSessionUser() {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+        return { user: null, sessionError: error, hasSession: false };
+    }
+    const user = data?.session?.user || null;
+    return { user, sessionError: null, hasSession: Boolean(data?.session) };
+}
+
 /**
  * Downloads the signed-in user's cloud collection and mirrors it
  * into the localStorage keys used by app.js.
+ *
+ * Never clears ownership on transient getUser/network failures while a
+ * session still exists. Never rebinds to an account that a newer shell
+ * or tab has already superseded.
  */
-async function synchronizeCloudCollection() {
+async function synchronizeCloudCollection(options = {}) {
+    const expectedEpoch =
+        options.expectedEpoch || captureOwnershipEpoch();
+    const callerGeneration = Number(
+        options.notBeforeGeneration ?? expectedEpoch.generation ?? 0
+    );
+
     const {
         user,
         error: userError
     } = await getCurrentUser();
 
+    // Re-check session after the await so a concurrent sign-out/switch wins.
+    const live = await readLiveSessionUser();
+
     if (userError || !user) {
-        currentUser = null;
+        if (live.hasSession && live.user) {
+            // Transient auth lookup failure — keep current ownership mirrors.
+            console.warn(
+                "[Starlight] Auth lookup failed while a session remains; ownership was not cleared.",
+                userError
+            );
+            return {
+                signedIn: true,
+                synchronized: false,
+                transientAuthError: true
+            };
+        }
+
+        // Confirmed missing session only.
+        bindOwnershipToAuthUser(null, {
+            reason: "signed-out",
+            notBeforeGeneration: callerGeneration
+        });
+        resetLocalSyncStateForOwner(null);
 
         console.log(
             "[Starlight] No signed-in account. Using the browser collection."
@@ -190,7 +282,75 @@ async function synchronizeCloudCollection() {
         };
     }
 
-    currentUser = user;
+    if (!live.user || live.user.id !== user.id) {
+        return {
+            signedIn: Boolean(live.user),
+            synchronized: false,
+            stale: true
+        };
+    }
+
+    if (
+        expectedEpoch.ownerId &&
+        expectedEpoch.ownerId !== user.id
+    ) {
+        return {
+            signedIn: true,
+            synchronized: false,
+            stale: true
+        };
+    }
+
+    // Another document already advanced ownership past this caller's view.
+    const metaBeforeBind = readOwnershipMeta();
+    if (
+        metaBeforeBind.ownerId &&
+        metaBeforeBind.ownerId !== user.id &&
+        metaBeforeBind.generation > callerGeneration
+    ) {
+        return {
+            signedIn: true,
+            synchronized: false,
+            stale: true,
+            reason: "superseded-meta"
+        };
+    }
+
+    if (options.rebind === false) {
+        // Passive refresh for cross-tab adopt: never rewrite ownership meta.
+        if (metaBeforeBind.ownerId !== user.id) {
+            return {
+                signedIn: true,
+                synchronized: false,
+                stale: true,
+                reason: "passive-owner-mismatch"
+            };
+        }
+    } else {
+        const bindResult = bindOwnershipToAuthUser(user, {
+            reason: options.bindReason || "cloud-sync",
+            notBeforeGeneration: callerGeneration
+        });
+        if (bindResult.reason === "superseded") {
+            return {
+                signedIn: true,
+                synchronized: false,
+                stale: true,
+                reason: "superseded"
+            };
+        }
+    }
+
+    const epoch = captureOwnershipEpoch();
+    if (epoch.ownerId !== user.id) {
+        return {
+            signedIn: true,
+            synchronized: false,
+            stale: true
+        };
+    }
+
+    resetLocalSyncStateForOwner(user);
 
     console.log(
         "[Starlight] Signed in as:",
@@ -201,6 +361,24 @@ async function synchronizeCloudCollection() {
         cards,
         error: collectionError
     } = await loadCloudCollection();
+
+    // Session/owner may have changed during the network round-trip.
+    const liveAfter = await readLiveSessionUser();
+    if (!liveAfter.user || liveAfter.user.id !== user.id) {
+        return {
+            signedIn: Boolean(liveAfter.user),
+            synchronized: false,
+            stale: true
+        };
+    }
+
+    if (!ownershipEpochMatches(epoch)) {
+        return {
+            signedIn: true,
+            synchronized: false,
+            stale: true
+        };
+    }
 
     if (collectionError) {
         throw collectionError;
@@ -217,20 +395,25 @@ async function synchronizeCloudCollection() {
         quantities
     } = createLocalStores(cloudRows);
 
-    writeLocalObject(
-        COLLECTION_KEY,
-        collectedCards
+    const applied = replaceActiveOwnershipSnapshot(
+        {
+            collected: collectedCards,
+            favorites: favoriteCards,
+            quantities
+        },
+        {
+            expectedOwnerId: epoch.ownerId,
+            expectedGeneration: epoch.generation
+        }
     );
 
-    writeLocalObject(
-        FAVORITES_KEY,
-        favoriteCards
-    );
-
-    writeLocalObject(
-        QUANTITIES_KEY,
-        quantities
-    );
+    if (!applied.applied) {
+        return {
+            signedIn: true,
+            synchronized: false,
+            stale: true
+        };
+    }
 
     previousFavoriteStore = {
         ...favoriteCards
@@ -261,8 +444,13 @@ async function synchronizeCloudCollection() {
 async function saveFavoriteToCloud(
     cardId,
     favoriteState,
-    previousState
+    previousState,
+    epoch
 ) {
+    if (!ownershipEpochMatches(epoch)) {
+        return { skipped: true, reason: "stale-epoch" };
+    }
+
     const {
         data,
         error
@@ -273,6 +461,16 @@ async function saveFavoriteToCloud(
             favorite_state: favoriteState
         }
     );
+
+    /*
+     * The RPC may already have been accepted for the prior session.
+     * If ownership moved, do not touch the next account's local favorites
+     * (neither rollback nor success mirror). Server state for the prior
+     * account is left as the server applied it.
+     */
+    if (!ownershipEpochMatches(epoch)) {
+        return { skipped: true, reason: "stale-epoch-after-rpc", rpcCompleted: true };
+    }
 
     if (error) {
         console.error(
@@ -314,13 +512,14 @@ async function saveFavoriteToCloud(
             "error"
         );
 
-        return;
+        return { skipped: false, error };
     }
 
     console.log(
         `[Starlight] Favorite synchronized: ${cardId} = ${favoriteState}`,
         data
     );
+    return { skipped: false, data };
 }
 
 /**
@@ -333,6 +532,11 @@ function checkForFavoriteChanges() {
     }
 
     if (!currentUser) {
+        return;
+    }
+
+    const epoch = captureOwnershipEpoch();
+    if (epoch.ownerId !== currentUser.id) {
         return;
     }
 
@@ -378,13 +582,15 @@ function checkForFavoriteChanges() {
     };
 
     for (const change of changes) {
+        const changeEpoch = { ...epoch };
         favoriteSyncQueue =
             favoriteSyncQueue
                 .then(() => {
                     return saveFavoriteToCloud(
                         change.cardId,
                         change.latestState,
-                        change.previousState
+                        change.previousState,
+                        changeEpoch
                     );
                 })
                 .catch(error => {
@@ -536,6 +742,155 @@ function startBinderApplication() {
     );
 }
 
+async function handleAuthOwnershipChange(event, session) {
+    const nextUser = session?.user || null;
+    const reason = String(event || "auth").toLowerCase();
+    const priorEpoch = captureOwnershipEpoch();
+
+    // Same account token refresh: keep local mirrors; cloud stays authoritative.
+    if (
+        reason === "token_refreshed" &&
+        nextUser &&
+        currentUser?.id === nextUser.id &&
+        readOwnershipMeta().ownerId === nextUser.id
+    ) {
+        return;
+    }
+
+    // TOKEN_REFRESHED without a user is not a confirmed sign-out by itself;
+    // wait for SIGNED_OUT / confirmed missing session before clearing.
+    if (reason === "token_refreshed" && !nextUser) {
+        const live = await readLiveSessionUser();
+        if (live.hasSession && live.user) {
+            return;
+        }
+        if (live.sessionError) {
+            console.warn(
+                "[Starlight] Token refresh reported no user, but session lookup erred; ownership kept.",
+                live.sessionError
+            );
+            return;
+        }
+    }
+
+    bindOwnershipToAuthUser(nextUser, {
+        reason,
+        notBeforeGeneration: priorEpoch.generation
+    });
+    resetLocalSyncStateForOwner(nextUser);
+
+    if (!nextUser) {
+        if (typeof window.renderAll === "function") {
+            window.renderAll();
+        }
+        return;
+    }
+
+    try {
+        await synchronizeCloudCollection({
+            bindReason: reason,
+            expectedEpoch: captureOwnershipEpoch(),
+            notBeforeGeneration: priorEpoch.generation
+        });
+        if (typeof window.renderAll === "function") {
+            window.renderAll();
+        }
+    } catch (error) {
+        console.error(
+            "[Starlight] Auth-driven collection sync failed:",
+            error
+        );
+    }
+}
+
+function bindAuthLifecycle() {
+    if (authLifecycleBound) return;
+    authLifecycleBound = true;
+
+    supabase.auth.onAuthStateChange((event, session) => {
+        if (
+            event === "INITIAL_SESSION" ||
+            event === "SIGNED_IN" ||
+            event === "SIGNED_OUT" ||
+            event === "USER_UPDATED" ||
+            event === "TOKEN_REFRESHED"
+        ) {
+            void handleAuthOwnershipChange(event, session);
+        }
+    });
+}
+
+function adoptOwnershipFromSharedMeta() {
+    const meta = readOwnershipMeta();
+    const nextId = meta.ownerId;
+    if (nextId === currentUser?.id) {
+        if (typeof window.renderAll === "function") {
+            window.renderAll();
+        }
+        return;
+    }
+
+    // Passive adopt only — never rewrite ownership meta from cross-tab events
+    // (avoids storage ↔ sync ↔ storage bounce loops).
+    currentUser = nextId ? { id: nextId } : null;
+    stopFavoriteMonitor();
+    if (currentUser) {
+        previousFavoriteStore = readLocalObject(FAVORITES_KEY);
+        startFavoriteMonitor();
+        void synchronizeCloudCollection({
+            bindReason: "storage-event",
+            rebind: false,
+            expectedEpoch: meta,
+            notBeforeGeneration: meta.generation
+        }).then(() => {
+            if (typeof window.renderAll === "function") {
+                window.renderAll();
+            }
+        }).catch(error => {
+            console.error(
+                "[Starlight] Cross-tab collection sync failed:",
+                error
+            );
+        });
+    } else if (typeof window.renderAll === "function") {
+        window.renderAll();
+    }
+}
+
+function bindCrossTabOwnershipListeners() {
+    if (ownershipListenersBound) return;
+    ownershipListenersBound = true;
+
+    // Same-document ownership writes already update currentUser via auth/sync
+    // handlers. Only re-render here — do not re-enter sync (loop risk).
+    window.addEventListener(OWNERSHIP_CHANGED_EVENT, () => {
+        if (typeof window.renderAll === "function") {
+            window.renderAll();
+        }
+    });
+
+    // `storage` fires only in *other* documents/tabs for localStorage writes.
+    window.addEventListener("storage", event => {
+        if (event.key !== OWNERSHIP_META_KEY) return;
+        adoptOwnershipFromSharedMeta();
+    });
+
+    try {
+        if (typeof BroadcastChannel === "function") {
+            const channel = new BroadcastChannel(BROADCAST_CHANNEL_NAME);
+            channel.addEventListener("message", message => {
+                if (message?.data?.type !== OWNERSHIP_CHANGED_EVENT) return;
+                // Prefer storage-driven adopt for owner changes; channel is render-only.
+                if (typeof window.renderAll === "function") {
+                    window.renderAll();
+                }
+            });
+        }
+    } catch {
+        /* ignore */
+    }
+}
+
 /**
  * Synchronizes cloud ownership, starts the original Binder, and
  * then begins monitoring favorites.
@@ -545,8 +900,27 @@ async function initializeStarlightBinder() {
         "starlight-cloud-loading"
     );
 
+    bindAuthLifecycle();
+    bindCrossTabOwnershipListeners();
+
     try {
-        await synchronizeCloudCollection();
+        // Resolve session before first paint of ownership UI when possible.
+        const { data: sessionData } = await supabase.auth.getSession();
+        const sessionUser = sessionData?.session?.user || null;
+        const priorMeta = readOwnershipMeta();
+        const sessionOwnerId = sessionUser?.id || null;
+        const ownershipMismatch = priorMeta.ownerId !== sessionOwnerId;
+        bindOwnershipToAuthUser(sessionUser, {
+            reason: sessionUser ? "initial-session" : "initial-signed-out",
+            // Only force-clear when the cached owner disagrees with the session.
+            force: ownershipMismatch
+        });
+        resetLocalSyncStateForOwner(sessionUser);
+
+        await synchronizeCloudCollection({
+            bindReason: "startup",
+            expectedEpoch: captureOwnershipEpoch()
+        });
     } catch (error) {
         console.error(
             "[Starlight] Cloud synchronization failed. Continuing with the browser collection:",

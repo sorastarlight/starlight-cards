@@ -19,6 +19,7 @@ import { initLiveFeedWidget } from './live-feed-widget.js?v=1.7';
 import { applyAvatarFrameClass } from './avatar-frame-utils.js';
 import { getMyProfileExtras } from './profile-extras-service.js';
 import { applyDailyNavReadyState } from './daily-nav-indicator.js';
+import { bindOwnershipToAuthUser } from './collection-local-store.js';
 
 const SHELL_BUILD = '94.5.0';
 const VIEW_READY_TIMEOUT_MS = 6500;
@@ -925,8 +926,44 @@ if (isStudioPreview()) {
 
 navigate(initial,{push:false,extra:locationExtraParams()});
 syncShellSfxToggle();
-supabase.auth.onAuthStateChange((event)=>{
+supabase.auth.onAuthStateChange((event, session)=>{
   if(event==='INITIAL_SESSION'||event==='SIGNED_IN'||event==='SIGNED_OUT'||event==='USER_UPDATED'||event==='TOKEN_REFRESHED'){
+    // Shell and iframe share localStorage ownership meta. Bind with the current
+    // generation so a stale document cannot rebind a previous account.
+    const priorGeneration = (()=>{
+      try{
+        const raw = JSON.parse(localStorage.getItem('sora-starlight-ownership-active-v1')||'{}');
+        const generation = Number(raw.generation);
+        return Number.isFinite(generation) && generation > 0 ? generation : 0;
+      }catch{
+        return 0;
+      }
+    })();
+    if(event==='TOKEN_REFRESHED' && session?.user){
+      bindOwnershipToAuthUser(session.user.id, {
+        reason: 'shell-token-refresh',
+        notBeforeGeneration: priorGeneration
+      });
+    }else if(event==='SIGNED_OUT'){
+      // Confirmed sign-out only — do not treat transient null sessions on
+      // TOKEN_REFRESHED as sign-out (that can archive/clear account mirrors).
+      bindOwnershipToAuthUser(null, {
+        reason: 'shell-signed-out',
+        notBeforeGeneration: priorGeneration
+      });
+    }else if(event==='SIGNED_IN' || event==='USER_UPDATED' || event==='INITIAL_SESSION'){
+      if(session?.user){
+        bindOwnershipToAuthUser(session.user, {
+          reason: `shell-${String(event).toLowerCase()}`,
+          notBeforeGeneration: priorGeneration
+        });
+      }else if(event==='INITIAL_SESSION'){
+        bindOwnershipToAuthUser(null, {
+          reason: 'shell-initial-signed-out',
+          notBeforeGeneration: priorGeneration
+        });
+      }
+    }
     scheduleHydrateAccount();
     liveFeedWidget?.refresh?.();
   }

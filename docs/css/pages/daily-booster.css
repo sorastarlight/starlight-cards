@@ -281,6 +281,11 @@
   color: #b64987;
 }
 
+.reward-pill.replay {
+  background: rgba(88, 120, 168, 0.14);
+  color: #3d5384;
+}
+
 .page-status {
   min-height: 24px;
   margin: 14px 0 0;

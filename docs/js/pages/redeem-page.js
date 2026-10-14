@@ -1,10 +1,10 @@
 import { redirectToLogin } from '../shell-route-utils.js';
 import { supabase } from '../supabase-client.js';
 import { redeemRewardCode } from '../redemption-service.js';
-import { revealRewardSequence } from '../reward-reveal.js?v=1.5.16';
+import { revealRewardSequence } from '../reward-reveal.js?v=1.5.17';
 import { maybeCelebrateSeriesCompletions } from '../series-complete-celebration.js?v=1.0.0';
 import { notifyShellEconomyChanged } from '../shell-economy.js';
-import { applyAwardedCardsToLocalStore } from '../collection-local-store.js';
+import { applyAwardedCardsToLocalStore, captureOwnershipEpoch } from '../collection-local-store.js';
 
 const GENERIC_PACK = 'site_assets/series01_rising_star_booster.png';
 const CARD_BACK = 'site_assets/StarlightCard_Back_NewLogo.png';
@@ -55,6 +55,7 @@ form.addEventListener('submit', async event => {
     const label = result.label || 'Reward Redeemed!';
 
     if (cards.length) {
+      const epoch = captureOwnershipEpoch();
       showStatus(`Code accepted! ${cards.length} ${cards.length === 1 ? 'card was' : 'cards were'} added.`, 'success');
       await revealRewardSequence(cards, {
         title: label,
@@ -62,7 +63,7 @@ form.addEventListener('submit', async event => {
         cardBackUrl: CARD_BACK
       });
       await maybeCelebrateSeriesCompletions(cards);
-      applyAwardedCardsToLocalStore(cards);
+      applyAwardedCardsToLocalStore(cards, { epoch });
       showReward(
         label,
         `${cards.length} ${cards.length === 1 ? 'card was' : 'cards were'} added directly to your collection.`

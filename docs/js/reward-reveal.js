@@ -138,11 +138,17 @@ function attachHoloSpark(element, card) {
 }
 
 export function normalizeRevealOptions(options = {}) {
+  const presentationMode = String(
+    options.presentationMode || options.presentation_mode || options.mode || 'claim'
+  )
+    .trim()
+    .toLowerCase();
   return {
     title: options.title || options.boosterName || options.booster_name || '',
     packImageUrl: options.packImageUrl || options.pack_image_url || '',
     cardBackUrl: options.cardBackUrl || options.card_back_url || DEFAULT_BACK,
-    autoOpen: Boolean(options.autoOpen ?? options.auto_open)
+    autoOpen: Boolean(options.autoOpen ?? options.auto_open),
+    presentationMode: presentationMode === 'replay' ? 'replay' : 'claim'
   };
 }
 
@@ -241,7 +247,7 @@ function acquireRevealViewportLock(doc) {
   };
 }
 
-export const REVEAL_PRESENTATION_VERSION = '1.5.16';
+export const REVEAL_PRESENTATION_VERSION = '1.5.17';
 
 const REVEAL_STYLESHEET_ID = `starlight-reveal-v${REVEAL_PRESENTATION_VERSION.replace(/\./g, '')}`;
 const REVEAL_STYLESHEET_URL = new URL(
@@ -473,21 +479,30 @@ export async function revealRewardSequence(cards = [], options = {}) {
     : null;
   const { win, doc } = getHost();
   const normalizedOptions = normalizeRevealOptions(options);
+  const isReplay = normalizedOptions.presentationMode === 'replay';
   const revealTitle = normalizedOptions.title || revealCopy.defaultTitle || 'Your Booster Pack';
   const packArtwork = normalizedOptions.packImageUrl || normalizedOptions.cardBackUrl;
   const summary = summarizeRevealCards(rewards);
   const cardsReadyText = rewards.length === 1
     ? (revealCopy.cardsReadyOne || '1 card ready.')
     : fillRevealTokens(revealCopy.cardsReady || '{count} cards ready.', { count: rewards.length });
-  const resultsSummaryText = summary.duplicates === 1
+  const alreadyReceivedBadge =
+    revealCopy.badgeAlreadyReceived || revealCopy.badgeReplay || 'Already received';
+  const resultsSummaryText = isReplay
     ? fillRevealTokens(
-      revealCopy.resultsSummaryOneDup || '{total} total · {new} new · 1 duplicate',
-      { total: summary.total, new: summary.newCards }
+      revealCopy.resultsSummaryReplay ||
+        '{total} cards · already received today (not a new pack)',
+      { total: summary.total }
     )
-    : fillRevealTokens(
-      revealCopy.resultsSummary || '{total} total · {new} new · {duplicates} duplicates',
-      { total: summary.total, new: summary.newCards, duplicates: summary.duplicates }
-    );
+    : summary.duplicates === 1
+      ? fillRevealTokens(
+        revealCopy.resultsSummaryOneDup || '{total} total · {new} new · 1 duplicate',
+        { total: summary.total, new: summary.newCards }
+      )
+      : fillRevealTokens(
+        revealCopy.resultsSummary || '{total} total · {new} new · {duplicates} duplicates',
+        { total: summary.total, new: summary.newCards, duplicates: summary.duplicates }
+      );
   await installStyles(doc);
 
   return new Promise(resolve => {
@@ -730,10 +745,12 @@ export async function revealRewardSequence(cards = [], options = {}) {
         const status = createElement(
           doc,
           'span',
-          `st-r3-result-status ${card.isDuplicate ? 'is-duplicate' : 'is-new'}`,
-          card.isDuplicate
-            ? (revealCopy.badgeDuplicate || 'Duplicate')
-            : (revealCopy.badgeNew || 'New')
+          `st-r3-result-status ${isReplay ? 'is-replay' : card.isDuplicate ? 'is-duplicate' : 'is-new'}`,
+          isReplay
+            ? alreadyReceivedBadge
+            : card.isDuplicate
+              ? (revealCopy.badgeDuplicate || 'Duplicate')
+              : (revealCopy.badgeNew || 'New')
         );
         const finish = finishEffectBadge(card, doc);
         badges.append(rarity, ...(finish ? [finish] : []), status);
@@ -852,15 +869,19 @@ export async function revealRewardSequence(cards = [], options = {}) {
         createElement(
           doc,
           'span',
-          `st-r3-badge ${card.isDuplicate ? 'is-duplicate' : 'is-new'}`,
-          card.isDuplicate
-            ? (revealCopy.badgeDuplicate || 'Duplicate')
-            : (revealCopy.badgeNewCard || 'New Card')
+          `st-r3-badge ${isReplay ? 'is-replay' : card.isDuplicate ? 'is-duplicate' : 'is-new'}`,
+          isReplay
+            ? alreadyReceivedBadge
+            : card.isDuplicate
+              ? (revealCopy.badgeDuplicate || 'Duplicate')
+              : (revealCopy.badgeNewCard || 'New Card')
         )
       );
       cardDetails.hidden = false;
       setPhase('revealed');
-      liveStatus.textContent = `${card.name}, ${prettyMeta(card.rarity)}. ${card.isDuplicate ? 'Duplicate card.' : 'New card.'}`;
+      liveStatus.textContent = isReplay
+        ? `${card.name}, ${prettyMeta(card.rarity)}. Already received today.`
+        : `${card.name}, ${prettyMeta(card.rarity)}. ${card.isDuplicate ? 'Duplicate card.' : 'New card.'}`;
       focusControl(actor);
     };
 

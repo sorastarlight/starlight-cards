@@ -2,8 +2,8 @@ import { loginShellHref } from '../shell-route-utils.js';
 import { supabase } from '../supabase-client.js';
 import { getStarBitsExchangePreview } from '../star-bits-service.js';
 import { openStarBitsBoosterById } from '../daily-booster-service.js';
-import { applyAwardedCardsToLocalStore } from '../collection-local-store.js';
-import { revealRewardSequence } from '../reward-reveal.js?v=1.5.16';
+import { applyAwardedCardsToLocalStore, captureOwnershipEpoch } from '../collection-local-store.js';
+import { revealRewardSequence } from '../reward-reveal.js?v=1.5.17';
 import { getCachedWebsiteContent } from '../website-content-hydrate.js';
 import { maybeCelebrateSeriesCompletions } from '../series-complete-celebration.js?v=1.0.0';
 import { notifyShellEconomyChanged } from '../shell-economy.js';
@@ -63,6 +63,46 @@ function say(message='', isError=false){
   statusEl.textContent = message;
   statusEl.className = `shop-status${isError?' error':''}`;
 }
+function friendlyWalletMessage(error, signedIn){
+  const raw = String(error?.message || error || '').trim();
+  if (/permission denied|jwt|not authenticated|login required|must be signed in|authorization/i.test(raw)) {
+    return signedIn
+      ? 'Your Star Bits balance could not be loaded. Try signing in again.'
+      : 'Sign in to see your Star Bits balance and open packs.';
+  }
+  if (!raw) return signedIn ? 'Star Bits balance could not be loaded.' : 'Sign in to see your Star Bits balance and open packs.';
+  if (/PGRST|RPC|postgres|function|column|relation/i.test(raw)) {
+    return signedIn
+      ? 'Your Star Bits balance could not be loaded right now. Please try again shortly.'
+      : 'Sign in to see your Star Bits balance and open packs.';
+  }
+  return raw;
+}
+function updateWalletChrome(){
+  if(currentUser){
+    balanceEl.textContent=currentBalance.toLocaleString();
+    walletNote.textContent=currentBalance>0
+      ? (shopCopy.walletReadyNote || 'Ready for your next pull')
+      : (shopCopy.walletEmptyNote || 'Convert extras to earn more');
+  }else{
+    balanceEl.textContent='—';
+    walletNote.textContent=shopCopy.walletSignedOutNote || 'Sign in to use Star Bits';
+  }
+}
+function packActionHtml(booster, { featured=false } = {}){
+  const cost = Number(booster.star_bits_cost) || 0;
+  const id = escapeHTML(booster.id);
+  const back = escapeHTML(booster.card_back_url || '');
+  if (!currentUser) {
+    const label = escapeHTML(shopCopy.signInToOpenCta || 'Sign in to Open');
+    return `<a class="price-button gallery-link" href="${loginShellHref('signin')}" target="_top" data-shell-view="login">${label}</a>`;
+  }
+  const affordable = currentBalance >= cost;
+  const openLabel = escapeHTML(affordable
+    ? (featured ? (shopCopy.openFeaturedCta || 'Open Featured Pack') : (shopCopy.openPackCta || 'Open Pack'))
+    : (shopCopy.needBitsCta || 'Need More Star Bits'));
+  return `<button class="price-button" type="button" data-buy="${id}" data-cost="${cost}" data-back="${back}" ${affordable ? '' : 'disabled'}>${openLabel}</button>`;
+}
 function modeLabel(mode='slots'){
   return ({slots:'Rarity Pack',series:'Series Pack',exact:'Exact Reward Pack',weighted_pool:'Custom Pool',single:'Single Card Pack',mixed:'Cards + Star Bits'})[mode] || 'Starlight Pack';
 }
@@ -94,13 +134,6 @@ function sortedBoosters(){
   }
 }
 function render(){
-  if(!currentUser){
-    const title=escapeHTML(shopCopy.signedOutTitle||'Sign in to visit the shop ✨');
-    const lead=escapeHTML(shopCopy.signedOutLead||'Your purchases and new cards need a Starlight account so they can be saved safely.');
-    const cta=escapeHTML(shopCopy.signedOutCta||'Log In or Create Account');
-    packsEl.innerHTML=`<div class="signed-out"><h2>${title}</h2><p>${lead}</p><a class="gallery-link" href="${loginShellHref('signin')}" target="_top" data-shell-view="login">${cta}</a></div>`;
-    return;
-  }
   const list=sortedBoosters();
   if(!list.length){
     featuredStage.innerHTML='';
@@ -115,13 +148,13 @@ function render(){
       <h2>${escapeHTML(featured.name)}</h2>
       <p>${escapeHTML(featured.description||'A magical Starlight booster ready to join your collection.')}</p>
       <div class="featured-pack-meta"><span>${escapeHTML(modeLabel(featured.reward_mode))}</span><span>${escapeHTML(summarizeBooster(featured))}</span></div>
-      <div class="featured-pack-actions"><strong>${starBitAmountHtml(escapeHTML, featuredCost, { iconSize: 'md', suffix: 'Star Bits' })}</strong><button type="button" data-buy="${escapeHTML(featured.id)}" data-cost="${featuredCost}" data-back="${escapeHTML(featured.card_back_url||'')}" ${currentBalance>=featuredCost?'':'disabled'}>${escapeHTML(currentBalance>=featuredCost?(shopCopy.openFeaturedCta||'Open Featured Pack'):(shopCopy.needBitsCta||'Need More Star Bits'))}</button><button type="button" data-details="${escapeHTML(featured.id)}">${escapeHTML(shopCopy.previewContentsCta||'Preview Contents')}</button></div>
+      <div class="featured-pack-actions"><strong>${starBitAmountHtml(escapeHTML, featuredCost, { iconSize: 'md', suffix: 'Star Bits' })}</strong>${packActionHtml(featured, { featured: true })}<button type="button" data-details="${escapeHTML(featured.id)}">${escapeHTML(shopCopy.previewContentsCta||'Preview Contents')}</button></div>
     </div>
     <div class="featured-pack-art"><div class="featured-orbit"></div><img src="${escapeHTML(featured.pack_image_url||FALLBACK_PACK)}" alt="${escapeHTML(featured.name)} booster pack"></div>
   </article>`;
-  packsEl.innerHTML=list.map((booster,index)=>{
+  const guestBanner = currentUser ? '' : `<div class="signed-out shop-guest-banner" role="status"><h2>${escapeHTML(shopCopy.signedOutTitle||'Browse the shop, then sign in to open packs')}</h2><p>${escapeHTML(shopCopy.signedOutLead||'Packs are public to browse. Sign in so purchases and new cards save to your Starlight account.')}</p><a class="gallery-link" href="${loginShellHref('signin')}" target="_top" data-shell-view="login">${escapeHTML(shopCopy.signedOutCta||'Log In or Create Account')}</a></div>`;
+  packsEl.innerHTML=guestBanner + list.map((booster)=>{
     const cost=Number(booster.star_bits_cost)||0;
-    const affordable=currentBalance>=cost;
     const image=escapeHTML(booster.pack_image_url||FALLBACK_PACK);
     const desc=escapeHTML(booster.description||'A specially configured Starlight booster pack.');
     const summary=escapeHTML(summarizeBooster(booster));
@@ -134,7 +167,7 @@ function render(){
         <div class="pack-meta"><span class="meta-pill">${escapeHTML(modeLabel(booster.reward_mode))}</span><span class="meta-pill">${summary}</span></div>
         <div class="pack-price">${starBitIconHtml(escapeHTML, { size: 'md' })}<span>${cost.toLocaleString()}</span></div>
         <div class="pack-actions">
-          <button class="price-button" type="button" data-buy="${escapeHTML(booster.id)}" data-cost="${cost}" data-back="${escapeHTML(booster.card_back_url||'')}" ${affordable?'':'disabled'}>${escapeHTML(affordable?(shopCopy.openPackCta||'Open Pack'):(shopCopy.needBitsCta||'Need More Star Bits'))}</button>
+          ${packActionHtml(booster)}
           <button class="details-button" type="button" data-details="${escapeHTML(booster.id)}">${escapeHTML(shopCopy.whatsInsideCta||'What’s Inside?')}</button>
         </div>
       </div>
@@ -332,11 +365,12 @@ async function confirmPurchase(){
   button.disabled=true;button.textContent='Opening…';
   try{
     purchaseModalController.close(undefined,'purchase');
+    const epoch = captureOwnershipEpoch();
     const result=await openStarBitsBoosterById(booster.id);
     const awardedCards = result.cards || [];
     await revealRewardSequence(awardedCards,{title:booster.name,packImageUrl:booster.pack_image_url||FALLBACK_PACK,cardBackUrl:booster.card_back_url||button.dataset.back||undefined,autoOpen:true});
     await maybeCelebrateSeriesCompletions(awardedCards);
-    applyAwardedCardsToLocalStore(awardedCards);
+    applyAwardedCardsToLocalStore(awardedCards, { epoch });
     pendingPurchase=null;
     notifyShellEconomyChanged({ source: 'shop-purchase', boosterId: booster.id, cards: awardedCards });
     notifyShellFeedChanged({ source: 'shop-purchase' });
@@ -369,22 +403,30 @@ featuredStage.addEventListener('click',event=>{
 async function load(){
   try{
     say('');packsEl.innerHTML='<div class="empty">Preparing the Starlight Card Shop…</div>';
-    const [{data:userData},{preview,error:previewError},{data:boosters,error:boosterError},{data:slots,error:slotError}] = await Promise.all([
+    balanceEl.textContent='—';
+    walletNote.textContent='Checking account…';
+    const [{data:userData},{data:boosters,error:boosterError},{data:slots,error:slotError}] = await Promise.all([
       supabase.auth.getUser(),
-      getStarBitsExchangePreview(),
       supabase.from('booster_types').select('id,name,description,star_bits_cost,pack_image_url,card_back_url,reward_mode,series_id,card_count,bonus_star_bits,sort_order').eq('is_active',true).eq('archived',false).gt('star_bits_cost',0).order('sort_order'),
       supabase.from('booster_slots').select('id,booster_id,name,quantity,sort_order,booster_slot_rates(rarity,percentage)').order('sort_order')
     ]);
     if(boosterError)throw boosterError;if(slotError)throw slotError;
-    // Star Bits preview requires auth; do not block browsing the public pack catalog.
-    currentUser=userData?.user||null;currentBalance=Number(preview?.starBitsBalance||0);balanceEl.textContent=currentBalance.toLocaleString();walletNote.textContent=currentBalance>0?'Ready for your next pull':'Convert extras to earn more';
+    // Star Bits preview requires auth; skip the RPC for guests so browsing stays public.
+    currentUser=userData?.user||null;
+    let preview=null;
+    let previewError=null;
+    if(currentUser){
+      ({preview, error:previewError} = await getStarBitsExchangePreview());
+    }
+    currentBalance=Number(preview?.starBitsBalance||0);
+    updateWalletChrome();
     const byBooster=new Map();(slots||[]).forEach(slot=>{if(!byBooster.has(slot.booster_id))byBooster.set(slot.booster_id,[]);byBooster.get(slot.booster_id).push(slot)});
     boosterData=(boosters||[]).map(booster=>({...booster,slots:byBooster.get(booster.id)||[]}));render();
     if(previewError){
-      say(currentUser ? (previewError.message||'Star Bits balance could not be loaded.') : (previewError.message||'You must be signed in to view your Star Bits exchange.'), true);
+      say(friendlyWalletMessage(previewError, Boolean(currentUser)), true);
     }
     window.parent?.postMessage({type:'starlight-content-ready',view:'shop'},location.origin);
-  }catch(error){packsEl.innerHTML='<div class="empty">The shop could not be loaded right now.</div>';say(error?.message||'Could not load the Card Shop.',true)}
+  }catch(error){packsEl.innerHTML='<div class="empty">The shop could not be loaded right now.</div>';say(friendlyWalletMessage(error, Boolean(currentUser)) || 'Could not load the Card Shop.',true)}
 }
 
 packsEl.addEventListener('click',async event=>{
@@ -399,5 +441,8 @@ purchaseConfirm.addEventListener('click',confirmPurchase);
 modalClose.addEventListener('click',closeDetails);
 window.addEventListener('starlight-website-content-hydrated', (event) => {
   shopCopy = event.detail?.shop || shopCopy;
+  // data-content hydrate can overwrite the wallet note; restore auth-aware copy.
+  updateWalletChrome();
+  if (boosterData.length) render();
 });
 void load();

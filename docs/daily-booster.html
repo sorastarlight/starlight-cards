@@ -8,7 +8,7 @@
 <link href="css/v80-8-ui.css" rel="stylesheet"/>
 <link rel="stylesheet" href="css/starlight-public.css?v=1.2.0">
 <link rel="stylesheet" href="css/pages/public-page.css?v=2.1.0">
-<link rel="stylesheet" href="css/pages/daily-booster.css?v=2.1.0">
+<link rel="stylesheet" href="css/pages/daily-booster.css?v=2.1.1">
 <script src="js/browser-performance.js?v=1.0.0" defer></script>
 <link rel="stylesheet" href="css/shared-ui.css?v=1.6.15">
 <link rel="stylesheet" href="css/qol-ui.css?v=94.2.8">
@@ -28,20 +28,26 @@
   </header>
 
   <div class="st-public-body">
-    <section aria-label="Free Daily Starlight Pack portal" class="portal-zone st-panel" id="portal-zone">
+    <section aria-label="Free Daily Starlight Pack portal" class="portal-zone st-panel is-locked" id="portal-zone">
       <div aria-hidden="true" class="portal-ring"></div>
       <div aria-hidden="true" class="portal-ribbons"><i></i><i></i><i></i></div>
-      <button aria-describedby="daily-status-description" class="pack-trigger" disabled id="pack-trigger" type="button">
+      <button aria-describedby="daily-status-description" class="pack-trigger" disabled id="pack-trigger" type="button" aria-busy="true">
         <img id="daily-pack-image" alt="Free Daily Starlight Pack" class="pack-image" src="site_assets/series01_rising_star_booster.png"/>
-        <span class="pack-ready-label" id="pack-ready-label">READY TO OPEN - CLICK THE PACK</span>
+        <span class="pack-ready-label" id="pack-ready-label">Checking availability</span>
       </button>
     </section>
 
     <section class="daily-status-card st-panel">
-      <h2 id="daily-status-heading">Your Free Pack Is Ready!</h2>
-      <p id="daily-status-description">Click the pack to view today's cards.</p>
+      <h2 id="daily-status-heading">Checking availability</h2>
+      <p id="daily-status-description">Confirming your Free Daily Starlight Pack status…</p>
       <div class="countdown hidden" id="countdown"></div>
     </section>
+
+    <div class="daily-actions">
+      <button type="button" class="st-btn st-btn--primary daily-link primary hidden" id="view-today-cards">View today’s cards</button>
+      <button type="button" class="st-btn st-btn--primary daily-link primary hidden" id="retry-daily-status">Retry status</button>
+      <a class="st-btn st-btn--primary daily-link primary hidden" href="binder?view=login&amp;mode=signin" id="sign-in-link" target="_top" data-shell-view="login" data-content="daily.signInCta">Sign In to Open</a>
+    </div>
 
     <section class="more-packs-card st-band" aria-labelledby="more-packs-title">
       <div class="more-packs-icon" aria-hidden="true">✦</div>
@@ -57,8 +63,6 @@
       </div>
     </section>
 
-    <div class="daily-actions"><a class="st-btn st-btn--primary daily-link primary hidden" href="binder?view=login&amp;mode=signin" id="sign-in-link" target="_top" data-shell-view="login" data-content="daily.signInCta">Sign In to Open</a></div>
-
     <section class="reward-section hidden" id="reward-section">
       <h2 class="st-section-title" id="reward-title" data-content="daily.pullsTitle">Your Pulls</h2>
       <div class="reward-grid" id="reward-grid"></div>
@@ -67,7 +71,7 @@
   </div>
 </main>
 <script type="module" src="js/pages/website-content-hydrate-page.js?v=1.2"></script>
-<script type="module" src="js/pages/daily-booster-page.js?v=1.5.15"></script>
+<script type="module" src="js/pages/daily-booster-page.js?v=1.6.1"></script>
 <script src="js/starlight-perspective-card.js?v=1.0.0"></script>
 <script src="js/shared-ui.js?v=1.6.15"></script>
 <script src="js/qol-ui.js?v=94.2.8" defer></script>

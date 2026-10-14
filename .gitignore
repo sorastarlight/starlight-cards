@@ -19,6 +19,9 @@ Desktop.ini
 *.tmp
 *.log
 
+# Local agent review screenshots (never commit)
+.local-review/
+
 # Build/dependency folders for later
 node_modules/
 dist/

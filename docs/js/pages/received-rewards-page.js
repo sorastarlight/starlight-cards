@@ -1,9 +1,9 @@
 import { getReceivedRewards, claimReceivedReward, dismissReceivedReward } from '../received-rewards-service.js';
-import { revealRewardSequence } from '../reward-reveal.js?v=1.5.16';
+import { revealRewardSequence } from '../reward-reveal.js?v=1.5.17';
 import { getCachedWebsiteContent } from '../website-content-hydrate.js';
 import { maybeCelebrateSeriesCompletions } from '../series-complete-celebration.js?v=1.0.0';
 import { notifyShellEconomyChanged } from '../shell-economy.js';
-import { applyAwardedCardsToLocalStore } from '../collection-local-store.js';
+import { applyAwardedCardsToLocalStore, captureOwnershipEpoch } from '../collection-local-store.js';
 import { starBitAmountHtml } from '../star-bit-icon.js';
 
 let rewardsCopy = getCachedWebsiteContent()?.rewards || {};
@@ -70,13 +70,14 @@ async function claim(id) {
     const payload = reward?.rewardPayload || snapshot?.rewardPayload || {};
     const cards = snapshot?.cards || [];
     if (Array.isArray(cards) && cards.length) {
+      const epoch = captureOwnershipEpoch();
       await revealRewardSequence(cards, {
         title: reward?.title || payload.boosterName || 'Starlight Gift',
         packImageUrl: payload.packImageUrl || payload.pack_image_url || snapshot.packImageUrl || snapshot.pack_image_url || '',
         cardBackUrl: payload.cardBackUrl || payload.card_back_url || snapshot.cardBackUrl || snapshot.card_back_url || undefined
       });
       await maybeCelebrateSeriesCompletions(cards);
-      applyAwardedCardsToLocalStore(cards);
+      applyAwardedCardsToLocalStore(cards, { epoch });
       notifyShellEconomyChanged({
         source: 'received-gift',
         rewardType: out?.rewardType || reward?.rewardType,

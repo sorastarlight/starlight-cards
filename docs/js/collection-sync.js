@@ -1,7 +1,8 @@
 import { supabase } from "./supabase-client.js";
-
-const LOCAL_COLLECTION_KEY =
-    "sora-starlight-card-binder-v5-collected";
+import {
+    applyAwardedCardsToLocalStore,
+    readLegacyGuestCollection
+} from "./collection-local-store.js";
 
 export { applyAwardedCardsToLocalStore } from "./collection-local-store.js";
 
@@ -28,73 +29,12 @@ function compareOwnedCardRows(a, b) {
 }
 
 /**
- * Reads the old V79.9 collection from localStorage.
- *
- * Expected format:
- * {
- *   "s01-003": true,
- *   "s01-008": true
- * }
+ * Reads the guest/legacy browser collection for explicit import.
+ * Prefers the guest archive; never treats another account's active
+ * mirror as importable guest data.
  */
 export function readLegacyCollection() {
-    const rawValue =
-        window.localStorage.getItem(
-            LOCAL_COLLECTION_KEY
-        );
-
-    if (!rawValue) {
-        return {
-            exists: false,
-            cardIds: [],
-            rawValue: null
-        };
-    }
-
-    try {
-        const parsedValue = JSON.parse(rawValue);
-
-        if (
-            !parsedValue ||
-            typeof parsedValue !== "object" ||
-            Array.isArray(parsedValue)
-        ) {
-            throw new Error(
-                "The saved collection is not in the expected format."
-            );
-        }
-
-        const cardIds = Object.entries(parsedValue)
-            .filter(([, isCollected]) => {
-                return isCollected === true;
-            })
-            .map(([cardId]) => {
-                return String(cardId).trim();
-            })
-            .filter(Boolean)
-            .filter((cardId, index, allCardIds) => {
-                return allCardIds.indexOf(cardId) === index;
-            })
-            .sort();
-
-        return {
-            exists: true,
-            cardIds,
-            rawValue
-        };
-    } catch (error) {
-        console.error(
-            "Unable to read the local collection:",
-            error
-        );
-
-        return {
-            exists: true,
-            cardIds: [],
-            rawValue,
-            error:
-                "The browser collection exists, but it could not be read."
-        };
-    }
+    return readLegacyGuestCollection();
 }
 
 /**

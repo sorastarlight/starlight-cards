@@ -7,6 +7,7 @@ const read = relativePath => readFile(new URL(`../${relativePath}`, import.meta.
 test('keeps the requested collection navigation labels in the shared shell', async () => {
   const binder = await read('docs/binder.html');
   const shell = await read('docs/js/app-shell.js');
+  const staffLink = await read('docs/js/staff-profile-link.js');
 
   assert.match(binder, /Card Gallery/);
   assert.match(binder, /shell-masthead/);
@@ -15,13 +16,19 @@ test('keeps the requested collection navigation labels in the shared shell', asy
   assert.match(defaults, /label: 'Card Gallery'/);
   assert.match(defaults, /label: 'My Collection'/);
   assert.doesNotMatch(defaults, /id: 'series'/);
-  assert.match(defaults, /id: 'admin-hub'/);
+  assert.match(defaults, /value: 'admin', label: 'Administration Hub'/);
+  assert.match(defaults, /pageTitles:[\s\S]*admin: 'Administration Hub'/);
   assert.match(defaults, /Redeem Code/);
   assert.match(defaults, /pageTitles:[\s\S]*collection: 'My Card Binder'/);
   assert.match(defaults, /pageTitles:[\s\S]*checklist: 'Card Checklist'/);
+  // Collector account menu stays slim; staff reach Admin Hub through the staff tools link.
+  assert.doesNotMatch(defaults, /accountMenu:[\s\S]*id: 'admin-hub'/);
+  assert.match(staffLink, /admin-hub\.html/);
+  assert.match(staffLink, /getMyStaffAccess/);
 
   assert.match(shell, /collection:\{title:'My Card Binder'/);
   assert.match(shell, /binder:\{title:'Card Gallery'/);
+  assert.match(shell, /admin:\{title:'Administration Hub'/);
 });
 
 test('gallery and album pages use rebuilt markup and render hooks', async () => {
