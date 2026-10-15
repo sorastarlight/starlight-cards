@@ -30,10 +30,14 @@ Original audit: `C:\Users\FET\Documents\Codex\2026-10-13\referenced-chatgpt-conv
 - Skip link + PNG lightbox Tab trap shipped; evidence `docs/OVERHAUL_A11Y_SLICE.md`
 - **Not** WCAG AA: screen-reader full journeys still unavailable in this environment
 
+### Perf slice (required — lab baselines established)
+
+- Lighthouse lab baselines + home CLS reserve-space fix — `docs/OVERHAUL_PERF_SLICE.md`
+- Lab ≠ field p75; mobile LCP inflated by slow-4G throttle
+
 ### Still required (not optional)
 
 - Screen-reader manual pass when tooling available (still required; not optional)
-- Lab performance baselines (home/gallery/collection/reveal)
 - Admin ops completion against audit (roles, odds, bulk confirm, audit, pause)
 - Release readiness (compat matrix, rollback/backup rehearsal, staged mechanism)
 

@@ -51,7 +51,7 @@ function pickShowcase(cards, limit = 4) {
   return pool.slice(0, limit);
 }
 
-function renderSeries(series) {
+function renderSeries(series, { prioritize = false } = {}) {
   const samples = pickShowcase(series.cards, 4);
   const art =
     series.boosterImageUrl ||
@@ -67,10 +67,13 @@ function renderSeries(series) {
     </li>`
     )
     .join('');
+  const packLoading = prioritize
+    ? 'fetchpriority="high" loading="eager" decoding="async"'
+    : 'loading="lazy" decoding="async"';
 
   return `<article class="st-home-set">
     <a class="st-home-set__pack" href="binder?view=binder&amp;cardSet=${encodeURIComponent(series.id)}" data-shell-view="binder">
-      <img src="${esc(art)}" alt="" loading="lazy" decoding="async">
+      <img src="${esc(art)}" alt="" width="192" height="288" ${packLoading}>
     </a>
     <div class="st-home-set__body">
       <p class="st-eyebrow">Featured set</p>
@@ -85,11 +88,14 @@ function renderSeries(series) {
 function render(seriesList) {
   if (!host) return;
   const featured = seriesList.filter((s) => s.cards.length).slice(0, 3);
+  host.removeAttribute('data-loading');
   if (!featured.length) {
     host.innerHTML = `<p class="st-empty">Card sets will appear here once the catalog is available.</p>`;
     return;
   }
-  host.innerHTML = featured.map(renderSeries).join('');
+  host.innerHTML = featured
+    .map((series, index) => renderSeries(series, { prioritize: index === 0 }))
+    .join('');
 }
 
 async function load() {

@@ -9,7 +9,7 @@
 <script src="js/browser-performance.js?v=1.0.0" defer></script>
 <link rel="stylesheet" href="css/starlight-public.css?v=1.2.1">
 <link rel="stylesheet" href="css/pages/public-page.css?v=2.1.0">
-<link rel="stylesheet" href="css/pages/home.css?v=3.2.0">
+<link rel="stylesheet" href="css/pages/home.css?v=3.2.1">
 <link rel="stylesheet" href="css/qol-ui.css?v=94.2.4">
 </head>
 <body>
@@ -28,7 +28,16 @@
 
   <section class="st-home-hero st-bleed-banner st-bleed-banner--hero" aria-label="Featured spotlight">
     <div class="st-home-hero__viewport">
-      <div class="st-home-hero__track" id="homeSpotlightTrack"></div>
+      <div class="st-home-hero__track" id="homeSpotlightTrack">
+        <article class="st-home-hero__slide st-home-hero__slide--placeholder" aria-hidden="true">
+          <div class="st-home-hero__copy">
+            <p class="st-eyebrow">Starlight Card Binder</p>
+            <h2>Loading spotlight…</h2>
+            <p>Featured collector moments will appear here.</p>
+          </div>
+          <div class="st-home-hero__media" aria-hidden="true"></div>
+        </article>
+      </div>
       <div class="st-home-hero__nav" hidden>
         <button type="button" data-home-spotlight-prev aria-label="Previous slide">‹</button>
         <button type="button" data-home-spotlight-next aria-label="Next slide">›</button>
@@ -51,8 +60,10 @@
         </div>
         <a class="st-btn st-btn--ghost" href="binder?view=binder" data-shell-view="binder">Browse all cards</a>
       </div>
-      <div id="homeFeaturedSets" class="st-home-set-grid" aria-live="polite">
-        <div class="st-empty">Loading featured Starlight sets…</div>
+      <div id="homeFeaturedSets" class="st-home-set-grid" aria-live="polite" data-loading="true">
+        <article class="st-home-set st-home-set--skeleton" aria-hidden="true"><div class="st-home-set__pack"></div><div class="st-home-set__body"><span class="st-skeleton-line"></span><span class="st-skeleton-line st-skeleton-line--short"></span></div></article>
+        <article class="st-home-set st-home-set--skeleton" aria-hidden="true"><div class="st-home-set__pack"></div><div class="st-home-set__body"><span class="st-skeleton-line"></span><span class="st-skeleton-line st-skeleton-line--short"></span></div></article>
+        <article class="st-home-set st-home-set--skeleton" aria-hidden="true"><div class="st-home-set__pack"></div><div class="st-home-set__body"><span class="st-skeleton-line"></span><span class="st-skeleton-line st-skeleton-line--short"></span></div></article>
       </div>
     </section>
 
@@ -124,8 +135,8 @@
   </div>
 </main>
 <script type="module" src="js/pages/website-content-hydrate-page.js?v=1.2"></script>
-<script type="module" src="js/home-spotlight.js?v=2.0.0"></script>
-<script type="module" src="js/home-featured-sets.js?v=1.0.0"></script>
+<script type="module" src="js/home-spotlight.js?v=2.0.1"></script>
+<script type="module" src="js/home-featured-sets.js?v=1.0.1"></script>
 <script type="module" src="js/home-news.js?v=2.0.0"></script>
 <script src="js/shared-ui.js?v=1.6.24"></script>
 <script src="js/qol-ui.js?v=94.2.4" defer></script>

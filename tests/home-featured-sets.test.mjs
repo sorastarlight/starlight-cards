@@ -8,7 +8,11 @@ test('home wires featured sets from the live card catalog', async () => {
   const css = await readFile(new URL('../docs/css/pages/home.css', import.meta.url), 'utf8');
 
   assert.match(html, /id="homeFeaturedSets"/);
+  assert.match(html, /st-home-set--skeleton/);
+  assert.match(html, /st-home-hero__slide--placeholder/);
   assert.match(html, /home-featured-sets\.js\?v=/);
+  assert.match(js, /fetchpriority="high"/);
+  assert.match(js, /prioritize: index === 0/);
   assert.match(html, /Featured sets/);
   assert.match(js, /fetchFreshCardCatalog/);
   assert.match(js, /getCachedCardCatalog/);
