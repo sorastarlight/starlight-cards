@@ -76,6 +76,16 @@ test('gallery page loads shared card modules', async () => {
   assert.match(binder, /card-png-lightbox\.js/);
 });
 
+test('shell exposes a skip link to main content', async () => {
+  const [binder, shellCss] = await Promise.all([
+    read('docs/binder.html'),
+    read('docs/css/app-shell.css')
+  ]);
+  assert.match(binder, /class="shell-skip-link"[^>]*href="#main-content"/);
+  assert.match(binder, /id="main-content"/);
+  assert.match(shellCss, /\.shell-skip-link:focus/);
+});
+
 test('card click opens png lightbox before the analyzer', async () => {
   const [app, lightbox] = await Promise.all([
     read('docs/js/app.js'),
@@ -91,6 +101,8 @@ test('card click opens png lightbox before the analyzer', async () => {
   assert.match(lightbox, /starlight-png-lightbox/);
   assert.match(lightbox, /stopPropagation/);
   assert.match(lightbox, /ArrowLeft|ArrowRight/);
+  assert.match(lightbox, /lightboxFocusable|event\.key !== 'Tab'/);
+  assert.match(lightbox, /event\.shiftKey/);
   const lightboxCss = await read('docs/css/card-png-lightbox.css');
   assert.match(lightboxCss, /z-index:\s*10050/);
   assert.match(lightboxCss, /max-width:\s*min\(100%,\s*340px\)/);

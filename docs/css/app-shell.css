@@ -11,6 +11,26 @@
   --shell-masthead-h:clamp(84px, 10vw, 96px);
   --shell-chrome-top:var(--shell-masthead-h, 96px);
 }
+.shell-skip-link{
+  position:absolute;
+  left:12px;
+  top:12px;
+  z-index:10000;
+  padding:10px 14px;
+  border-radius:10px;
+  background:#30344f;
+  color:#fff;
+  font-weight:800;
+  text-decoration:none;
+  transform:translateY(-220%);
+  transition:transform .12s ease;
+}
+.shell-skip-link:focus,
+.shell-skip-link:focus-visible{
+  transform:translateY(0);
+  outline:3px solid #fed334;
+  outline-offset:3px;
+}
 .unified-nav{display:grid;gap:7px;margin:14px 0 18px;padding:12px;border:1px solid rgba(107,198,248,.32);border-radius:18px;background:linear-gradient(145deg,rgba(255,255,255,.9),rgba(245,251,255,.86));box-shadow:0 9px 22px rgba(61,83,132,.08)}
 .unified-nav a{display:flex;align-items:center;gap:10px;min-height:42px;padding:9px 12px;border-radius:12px;color:#405fa1;font-weight:850;text-decoration:none;transition:.16s ease}
 .unified-nav a:hover,.unified-nav a:focus-visible{background:rgba(107,198,248,.15);transform:translateX(2px)}

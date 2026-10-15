@@ -8,6 +8,17 @@ const STYLE_ID = 'starlight-png-lightbox-css';
 const STYLE_HREF = 'css/card-png-lightbox.css?v=1.0.3';
 const DEFAULT_CARD_BACK = 'site_assets/StarlightCard_Back_NewLogo.png';
 
+function lightboxFocusable(root) {
+  return [...root.querySelectorAll([
+    'a[href]',
+    'button:not([disabled])',
+    'input:not([disabled])',
+    'select:not([disabled])',
+    'textarea:not([disabled])',
+    '[tabindex]:not([tabindex="-1"])'
+  ].join(','))].filter((el) => !el.hidden && el.getAttribute('aria-hidden') !== 'true');
+}
+
 function getHost() {
   try {
     if (window.top && window.top !== window && window.top.location.origin === window.location.origin) {
@@ -170,12 +181,35 @@ function open(options = {}) {
     if (event.key === 'Escape') {
       event.preventDefault();
       close();
-    } else if (event.key === 'ArrowLeft') {
+      return;
+    }
+    if (event.key === 'ArrowLeft') {
       event.preventDefault();
       step(-1);
-    } else if (event.key === 'ArrowRight') {
+      return;
+    }
+    if (event.key === 'ArrowRight') {
       event.preventDefault();
       step(1);
+      return;
+    }
+    if (event.key !== 'Tab') return;
+    const dialog = root.querySelector('.png-lightbox-dialog') || root;
+    const items = lightboxFocusable(dialog);
+    if (!items.length) {
+      event.preventDefault();
+      dialog.focus?.();
+      return;
+    }
+    const first = items[0];
+    const last = items[items.length - 1];
+    const current = doc.activeElement;
+    if (event.shiftKey && (current === first || !dialog.contains(current))) {
+      event.preventDefault();
+      last.focus?.();
+    } else if (!event.shiftKey && (current === last || !dialog.contains(current))) {
+      event.preventDefault();
+      first.focus?.();
     }
   };
 

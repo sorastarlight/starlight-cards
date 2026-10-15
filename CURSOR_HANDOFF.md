@@ -25,9 +25,14 @@ Original audit: `C:\Users\FET\Documents\Codex\2026-10-13\referenced-chatgpt-conv
 
 - Safe QA-linked Worker EventSub retry — QA A/B have **0** Twitch links; do not trigger viewer rewards.
 
+### A11y slice (required — partial)
+
+- Skip link + PNG lightbox Tab trap shipped; evidence `docs/OVERHAUL_A11Y_SLICE.md`
+- **Not** WCAG AA: screen-reader full journeys still unavailable in this environment
+
 ### Still required (not optional)
 
-- Accessibility / journey parity verification + defect fixes (do not claim WCAG AA from automation alone)
+- Screen-reader manual pass when tooling available (still required; not optional)
 - Lab performance baselines (home/gallery/collection/reveal)
 - Admin ops completion against audit (roles, odds, bulk confirm, audit, pause)
 - Release readiness (compat matrix, rollback/backup rehearsal, staged mechanism)
