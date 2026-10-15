@@ -143,6 +143,19 @@ function canPaint(epoch) {
   return ownershipEpochMatches(epoch);
 }
 
+function safeCardArtUrl(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  try {
+    const base = typeof location !== 'undefined' ? location.href : 'https://cards.sorastarlight.net/';
+    const url = new URL(raw, base);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return '';
+    return url.href;
+  } catch {
+    return '';
+  }
+}
+
 function render(cards, title = dailyCopy.pullsTitle || 'Your Pulls', { epoch = null, replay = false } = {}) {
   if (!canPaint(epoch)) return;
   const displayCards = replay
@@ -153,25 +166,48 @@ function render(cards, title = dailyCopy.pullsTitle || 'Your Pulls', { epoch = n
   for (const card of displayCards) {
     const item = document.createElement('article');
     item.className = `reward-card rarity-${String(card.rarity || 'common').toLowerCase()}`;
-    const art = card.imageUrl || card.thumbnailUrl || '';
-    const name = card.name || 'Card';
+    const artUrl = safeCardArtUrl(card.imageUrl || card.thumbnailUrl || '');
+    const name = String(card.name || 'Card');
     const number = card.cardNumber ?? card.card_number ?? '';
-    const rarity = card.rarity || 'Unknown';
-    const series = card.seriesName || card.series_name || '';
+    const rarity = String(card.rarity || 'Unknown');
+    const series = String(card.seriesName || card.series_name || '');
     const quantity = card.quantity;
-    const quantityLine =
+    const quantityText =
       quantity != null && Number.isFinite(Number(quantity))
-        ? `<p>Quantity: ${quantity}</p>`
+        ? `Quantity: ${Number(quantity)}`
         : replay
-          ? '<p>Owned in collection</p>'
-          : '<p>Quantity: 1</p>';
+          ? 'Owned in collection'
+          : 'Quantity: 1';
     const pill = replay
       ? card.resultPill || 'Already received'
       : card.isDuplicate
         ? 'Duplicate Pull'
         : 'New Card!';
     const pillClass = replay ? 'replay' : card.isDuplicate ? 'duplicate' : '';
-    item.innerHTML = `<span class="reward-card-art"><img src="${art}" alt="${name} card artwork"></span><h3>#${number} ${name}</h3><p>${rarity} â€¢ ${series}</p>${quantityLine}<span class="reward-pill ${pillClass}">${pill}</span>`;
+
+    const artWrap = document.createElement('span');
+    artWrap.className = 'reward-card-art';
+    if (artUrl) {
+      const img = document.createElement('img');
+      img.src = artUrl;
+      img.alt = `${name} card artwork`;
+      artWrap.append(img);
+    }
+
+    const heading = document.createElement('h3');
+    heading.textContent = number === '' || number == null ? name : `#${number} ${name}`;
+
+    const meta = document.createElement('p');
+    meta.textContent = series ? `${rarity} · ${series}` : rarity;
+
+    const quantityEl = document.createElement('p');
+    quantityEl.textContent = quantityText;
+
+    const pillEl = document.createElement('span');
+    pillEl.className = `reward-pill ${pillClass}`.trim();
+    pillEl.textContent = pill;
+
+    item.append(artWrap, heading, meta, quantityEl, pillEl);
     rewardGrid.append(item);
   }
   rewardSection.classList.remove('hidden');

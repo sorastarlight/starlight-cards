@@ -405,4 +405,11 @@ test('page wiring: status retry, ownership clear, and replay never re-grant', as
   assert.match(page, /notifyShellCollectionReconcile/);
   assert.match(page, /presentationMode:\s*isReplay\s*\?\s*['"]replay['"]/);
   assert.match(page, /Already received/);
+
+  const renderFn = page.slice(page.indexOf('function render('), page.indexOf('function setPackBusy'));
+  assert.match(renderFn, /safeCardArtUrl/);
+  assert.match(renderFn, /createElement\('img'\)/);
+  assert.match(renderFn, /textContent = /);
+  assert.doesNotMatch(renderFn, /innerHTML\s*=/);
+  assert.match(html, /daily-booster-page\.js\?v=1\.7\.6/);
 });
