@@ -3,7 +3,7 @@
  * Does not touch production data.
  */
 import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const REQUIRED_KEYS = [
@@ -44,15 +44,15 @@ export function validateBackupShape(payload) {
   return errors;
 }
 
-const here = dirname(fileURLToPath(import.meta.url));
-const fixturePath = join(here, '..', 'tests', 'fixtures', 'database-backup-v90.2.sample.json');
-const fixture = JSON.parse(readFileSync(fixturePath, 'utf8'));
-const errors = validateBackupShape(fixture);
-
-if (errors.length) {
-  console.error('Backup shape validation failed:');
-  for (const error of errors) console.error(`- ${error}`);
-  process.exit(1);
+const thisFile = fileURLToPath(import.meta.url);
+if (process.argv[1] && resolve(process.argv[1]) === thisFile) {
+  const fixturePath = join(dirname(thisFile), '..', 'tests', 'fixtures', 'database-backup-v90.2.sample.json');
+  const fixture = JSON.parse(readFileSync(fixturePath, 'utf8'));
+  const errors = validateBackupShape(fixture);
+  if (errors.length) {
+    console.error('Backup shape validation failed:');
+    for (const error of errors) console.error(`- ${error}`);
+    process.exit(1);
+  }
+  console.log(`Backup shape OK (${REQUIRED_KEYS.length} keys, format ${EXPECTED_FORMAT}).`);
 }
-
-console.log(`Backup shape OK (${REQUIRED_KEYS.length} keys, format ${EXPECTED_FORMAT}).`);

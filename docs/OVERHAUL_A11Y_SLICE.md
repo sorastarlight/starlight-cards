@@ -32,3 +32,33 @@ Date: 2026-10-15. Does **not** claim WCAG 2.2 AA conformance.
 
 - Staff/manual SR pass on reveal + shop purchase confirm (external tooling)
 - Re-run signed-in mobile reveal keyboard path with QA session in browser automation
+
+## Manual screen-reader checklist (required; tooling unavailable here)
+
+Environment note (2026-10-15): Windows Narrator binary exists; NVDA/JAWS/VoiceOver automation is not available in this agent session. Do **not** claim WCAG AA from this checklist alone.
+
+### Setup
+1. Use NVDA (Windows) or VoiceOver (macOS) with Chromium on `docs/` over HTTP (not `file://`).
+2. Sign in with a disposable QA collector.
+3. Enable “speak focus / browse mode” defaults; keep screen magnification off for the first pass.
+
+### Journey A — Shell + skip link
+1. Land on Card Gallery shell. Confirm page title spoken.
+2. Tab until “Skip to main content”; Activate; confirm focus moves into main landmark.
+3. Open account menu with keyboard; Escape closes and restores focus.
+
+### Journey B — Reveal (Daily or Received Gift)
+1. Open a pack with keyboard (Enter on pack CTA).
+2. Confirm reveal dialog/region announces title; Tab stays inside until Done/Escape.
+3. Advance pile/cards with keyboard; hear name + rarity (or equivalent text alternative).
+4. Finish → results; focus returns to the launching control.
+
+### Journey C — Modal trap (Shop confirm or Admin confirm)
+1. Open a confirm modal; confirm initial focus in dialog.
+2. Tab cycles only dialog controls; Escape closes; focus restores.
+
+### Journey D — Mobile + reduced motion
+1. 390-wide viewport: no off-screen focus traps.
+2. `prefers-reduced-motion: reduce`: reveal still completable via Reveal All / Skip without granting inventory client-side.
+
+Record pass/fail per step with SR product + browser version.

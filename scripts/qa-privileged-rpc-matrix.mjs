@@ -25,6 +25,8 @@ const ADMIN_PROBES = [
   { fn: 'admin_get_booster_configuration', args: {} },
   { fn: 'admin_list_staff_audit_log', args: { requested_limit: 1 } },
   { fn: 'admin_get_content_studio', args: {} },
+  { fn: 'admin_get_ops_pauses', args: {} },
+  { fn: 'admin_list_ops_release_cohort', args: {} },
   {
     fn: 'admin_manual_twitch_reward_v890',
     args: {
@@ -138,7 +140,8 @@ async function rpc(token, fn, args = {}) {
     ok: res.ok,
     status: res.status,
     code: res.data?.code || null,
-    message: res.data?.message || res.data?.error || (res.ok ? null : JSON.stringify(res.data))
+    message: res.data?.message || res.data?.error || (res.ok ? null : JSON.stringify(res.data)),
+    data: res.data
   };
 }
 
@@ -160,6 +163,14 @@ async function probeRole(label, token) {
     collected_card_ids: ['qa-matrix-nonexistent-card'],
     requested_import_hash: 'short'
   });
+  // Canary feature must not expose payload to non-cohort collectors while stage is stable.
+  const canary = await rpc(token, 'get_canary_feature', {
+    requested_feature: 'gallery_density_preview'
+  });
+  const canaryDenied =
+    label === 'anon'
+      ? denied(canary)
+      : canary.ok && canary.data && canary.data.allowed === false;
   const adminAllowed = ADMIN_PROBES.filter((p) => !denied(admin[p.fn])).map((p) => p.fn);
   const workerAllowed = WORKER_ONLY.filter((p) => !denied(workerOnly[p.fn])).map((p) => p.fn);
   const adminAllDenied = adminAllowed.length === 0;
@@ -171,6 +182,13 @@ async function probeRole(label, token) {
     adminAllowed,
     workerAllowed,
     legacyImportDenied: denied(legacyImport),
+    canaryDenied,
+    canary: {
+      ok: canary.ok,
+      status: canary.status,
+      allowed: canary.data?.allowed ?? null,
+      reason: canary.data?.reason || null
+    },
     legacyImport: {
       ok: legacyImport.ok,
       status: legacyImport.status,
@@ -189,7 +207,7 @@ async function probeRole(label, token) {
         { ok: workerOnly[p.fn].ok, status: workerOnly[p.fn].status, code: workerOnly[p.fn].code }
       ])
     ),
-    pass: adminAllDenied && workerAllDenied && denied(legacyImport)
+    pass: adminAllDenied && workerAllDenied && denied(legacyImport) && canaryDenied
   };
 }
 

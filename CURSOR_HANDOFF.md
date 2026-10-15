@@ -6,69 +6,102 @@ Project: `S:\NewVTuberProject\Stream Assets\Games\StarlightCard Site`
 
 Continue from this Games folder clone of `https://github.com/sorastarlight/starlight-cards.git` on `main`. Live: `https://cards.sorastarlight.net/`. Canonical: `AGENTS.md`.
 
-**Repository identity:** `sorastarlight/starlight-cards` (repo id `1298841027`). Earlier audit used `starlight-card-binder` (same product after rename).
+**Repository identity:** `sorastarlight/starlight-cards` (repo id `1298841027`).
 
 Original audit: `C:\Users\FET\Documents\Codex\2026-10-13\referenced-chatgpt-conversation-this-is-an\outputs\card-site-audit.md` (2026-10-13).
 
-## Overhaul status (honest)
+## Status model (use these three buckets)
 
-Required slices 1–5 are implemented with evidence. Remaining items below are **blocked** (external access) or **optional backlog** — not silent skips of required work.
-
-### 1. Security / reward integrity — done
-
-- Evidence: `docs/OVERHAUL_SECURITY_SLICE.md`
-- Privileged RPC matrix pass; legacy import trust; Twitch eligibility locks; admin NULL role-gate fix
-- Worker **1.1.5**
-
-### 2. Accessibility / journey parity — done with blocked SR
-
-- Evidence: `docs/OVERHAUL_A11Y_SLICE.md`
-- Skip link, lightbox Tab trap, reduced-motion/zoom/mobile checks recorded
-- **Still required when tooling available:** full screen-reader journey pass (not claimed WCAG AA)
-
-### 3. Performance lab baselines — done
-
-- Evidence: `docs/OVERHAUL_PERF_SLICE.md`
-- Lab ≠ field p75 (traffic limitation, not a stop)
-
-### 4. Admin ops — done
-
-- Evidence: `docs/OVERHAUL_ADMIN_OPS_SLICE.md`
-- Hub capability gates; Twitch/daily confirms; odds validation retained; ops pauses + audit; Health UI
-
-### 5. Release readiness — done with blocked disposable restore
-
-- Evidence: `docs/OVERHAUL_RELEASE_READINESS.md`
-- Compat matrix; pause rollback rehearsal; staged `stable`/`canary`; backup shape script
-- **Blocked:** full backup restore onto a disposable Supabase project (needs disposable target + staff export)
-
-### Externally blocked (required when access arrives)
-
-- Safe QA-linked Worker EventSub **live retry** (QA A/B have **0** Twitch links)
-- Staff-positive browser pause toggles (needs owner/admin browser session)
-- Screen-reader full journeys
-- Disposable-project backup restore drill
-
-### Optional backlog
-
-- Wishlists / chosen collecting goals / recent-pulls strip
-- Non-iframe shell pilot; full design-token migration; legacy CSS consolidation
-- Sign Out discoverability polish; embed a11y tree dual exposure
-- Staff-positive live RPC probes (needs staff QA credentials)
-
-## Live verified markers
-
-| Item | Evidence |
+| Bucket | Meaning |
 | --- | --- |
-| Security slice | Worker **1.1.5**; admin NULL gates **0** vulnerable; RPC matrix pass |
-| Ops pauses | migrations `20261015015020`, `20261015015155`; features live after toggle rehearsal |
-| Release stage | `stable`; staff canary banner only |
-| Backup shape | `node scripts/qa-backup-shape.mjs` |
-| `npm run check` | run after each ship |
+| **Implemented** | Code/migrations shipped |
+| **Validated** | Exercised with evidence this session (or prior recorded evidence) |
+| **Unverified** | Still required; not optional because hard |
+
+Do not collapse “implemented” into “validated.”
+
+---
+
+## 1. Security / reward integrity
+
+| Item | Implemented | Validated | Unverified |
+| --- | --- | --- | --- |
+| Legacy import restrictions | Yes — `import_legacy_collection`; anon EXECUTE revoked; XP skip | Yes — prod grants (`anon_import=false`, `import_skips_xp=true`); QA matrix deny (400/401) | Successful one-shot import on disposable account (not run; mutates inventory) |
+| Twitch eligibility concurrency | Yes — advisory lock + `ignored` in apply/deliver; Worker **1.1.5** | Yes — prod function body checks; authenticated EXECUTE false on grant RPCs | Live EventSub retry with QA-linked Twitch |
+| Admin NULL role gate | Yes — `coalesce(actor_role,'')` | Yes — `still_vulnerable_null_gates=0`; collectors denied admin RPCs | Staff-positive browser session |
+| Ops pause guards | Yes — shop/conversions/trades | Yes — isolated local suite pause/resume; **prod pauses not toggled** | Staff UI pause click on production |
+| Privileged deny matrix | Yes — `scripts/qa-privileged-rpc-matrix.mjs` | Yes — overallPass true (incl. ops pauses + canary deny) | Staff-positive matrix rows |
+
+Evidence: `docs/OVERHAUL_SECURITY_SLICE.md`, `.local-review/privileged-rpc-matrix-evidence.json`, `.local-review/ops-integrity-local-evidence.json`
+
+---
+
+## 2. Accessibility
+
+| Item | Implemented | Validated | Unverified |
+| --- | --- | --- | --- |
+| Skip link, lightbox trap, reveal contracts | Yes | Source/unit + prior lab | — |
+| Reduced motion / mobile / 200% zoom spot | Yes | Lab notes in a11y slice | Full matrix every page |
+| Screen-reader journeys | Checklist only | Tooling unavailable (Narrator present; no NVDA/automation harness) | Full SR pass — see checklist in `docs/OVERHAUL_A11Y_SLICE.md` |
+
+---
+
+## 3. Performance
+
+| Item | Implemented | Validated | Unverified |
+| --- | --- | --- | --- |
+| Lab baselines home/gallery/collection/reveal | Yes | Lighthouse lab files under `.local-review/perf/` | Field p75 (insufficient traffic) |
+
+---
+
+## 4. Admin ops
+
+| Item | Implemented | Validated | Unverified |
+| --- | --- | --- | --- |
+| Hub capability gates | Yes | Source review | Staff browser gate walk |
+| Bulk/daily confirms | Yes | Source review | Staff browser confirms |
+| Odds validation | Yes | Existing booster validator tests | — |
+| Audit history | Yes | RPCs write audit for pause/cohort/stage | Staff UI log view |
+| Ops pause UI | Yes — Health page | Isolated SQL; deny probes | Staff browser toggles (avoid prod global toggles for evidence) |
+
+Evidence: `docs/OVERHAUL_ADMIN_OPS_SLICE.md`
+
+**Staff access fact:** production has **2** staff rows (`owner`×1, `admin`×1). QA A/B are collectors only. No staff QA identity in `.local-review`. **Remaining access requirement:** credentials (or approved temporary staff role) for an authorized QA staff account — do not promote collectors without approval.
+
+---
+
+## 5. Release readiness / staged exposure
+
+| Item | Implemented | Validated | Unverified |
+| --- | --- | --- | --- |
+| Staff canary banner | Yes | Source | Staff browser while stage=canary |
+| **Server-gated canary feature** | Yes — `get_canary_feature` + `ops_release_cohort` + feature flags | Yes — isolated allow/deny/disable; prod collectors get `allowed:false` under stable | Live canary cohort member on production (would require approved cohort add) |
+| Disable path | Yes — stage→stable or `feature.enabled=false` | Yes — isolated suite | — |
+| Backup restore (Postgres JSON) | Yes — `scripts/qa-backup-restore-local.mjs` → DB `starlight_backup_restore_qa` | Yes — shape + load + joins | Auth/Storage/full pg_dump restore |
+| Compat matrix | Yes | Documented | — |
+
+Evidence: `docs/OVERHAUL_RELEASE_READINESS.md`, `.local-review/backup-restore-local-evidence.json`
+
+Migrations: `20261015015020` pauses, `20261015015155` stage, `20261015020017` canary cohort gates.
+
+---
+
+## Externally blocked (required)
+
+1. QA-linked Twitch EventSub **live retry**
+2. Screen-reader full journeys (manual checklist ready)
+3. Staff-positive UI exercise (needs staff QA credentials — **not** expanding QA A/B)
+4. Production canary cohort positive path (needs approved cohort membership; keep stage stable until intentionally enabled)
+
+## Optional backlog
+
+- Wishlists / collecting goals / recent-pulls
+- Non-iframe shell pilot; design-token / legacy CSS consolidation
+- Sign Out discoverability; embed a11y dual exposure
 
 ## Notes
 
-- Do not install `starlight_test` on production.
-- Do not rewrite previously applied migrations.
-- Economic changes, destructive ops, paid resources, expanded permissions, and viewer reward triggers stay out of scope unless newly authorized.
-- Never commit `.local-review/` credentials or inject scripts.
+- Do not install `starlight_test` / integrity fixtures on production.
+- Do not rewrite applied migrations.
+- Do not toggle production global pauses solely for evidence.
+- Never commit `.local-review/` credentials.

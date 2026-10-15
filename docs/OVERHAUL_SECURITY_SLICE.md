@@ -17,10 +17,20 @@ Date: 2026-10-15. Milestone: V1.0 foundation / audit Phase 1 integrity.
 - Migrations: `20261015012911` (placeholder), `20261015013132` (apply), `20261015013157` (deliver), `20261015013211` (import body), `20261015013346` (NULL role gate)
 - Worker: **1.1.5** deployed (`starlight-twitch-integration`)
 
+## Buckets (2026-10-15 refresh)
+
+| Control | Implemented | Validated | Unverified |
+| --- | --- | --- | --- |
+| Privileged deny matrix | Yes | QA A/B + anon pass (incl. ops pauses, canary deny) | Staff-positive rows |
+| Legacy import | Yes | Grants + deny probes | Successful import mutation on disposable account |
+| Twitch eligibility locks | Yes | Body checks + EXECUTE denials | Live EventSub retry |
+| Admin NULL gate | Yes | 0 vulnerable defs + collector denials | Staff browser |
+| Pause guards | Yes | Isolated suite (no prod toggle) | Staff UI |
+
 ## Explicitly blocked / incomplete
 
 - Safe QA-linked Twitch EventSub **live retry** (no Twitch links on QA A/B)
-- Staff-positive (moderator/admin/owner) live probes — no staff QA credentials; covered by function-body checks + isolated SQL suite pattern
+- Staff-positive (moderator/admin/owner) live probes — no staff QA credentials; covered by function-body checks + isolated SQL suite (`scripts/qa-ops-integrity-local.mjs`)
 - service_role positive grant path not invoked from browser matrix (Worker-only)
 
 ## Production verification (read-only / QA deny)

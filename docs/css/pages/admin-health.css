@@ -35,3 +35,5 @@
 .ops-release-row select,.ops-release-row input{min-width:180px;padding:8px 10px;border-radius:10px;border:1px solid #c9daf5;background:#fff}
 .ops-release-notes{flex:1 1 220px}
 .ops-release-meta{margin:12px 0 0;color:#4d5f84;font-size:.88rem}
+.ops-cohort-list{margin:0;padding-left:18px;color:#27468b}
+.ops-cohort-list li{margin:4px 0}

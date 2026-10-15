@@ -8,7 +8,8 @@ import {
   getOpsPauses,
   setOpsPause,
   getOpsReleaseStage,
-  setOpsReleaseStage
+  setOpsReleaseStage,
+  listOpsReleaseCohort
 } from '../ops-controls-service.js';
 import { getMyStaffAccess } from '../staff-service.js';
 import { mountAdminCrumb } from '../admin-shell.js';
@@ -68,7 +69,12 @@ async function renderOpsControls() {
       opsPanel.hidden = true;
       return;
     }
-    const [pauses, release] = await Promise.all([getOpsPauses(), getOpsReleaseStage()]);
+    const [pauses, release, cohort] = await Promise.all([
+      getOpsPauses(),
+      getOpsReleaseStage(),
+      listOpsReleaseCohort()
+    ]);
+    const cohortRows = Array.isArray(cohort) ? cohort : [];
     opsPanel.hidden = false;
     opsPanel.innerHTML = `
       <section class="ops-panel" aria-labelledby="opsPauseTitle">
@@ -113,7 +119,25 @@ async function renderOpsControls() {
           </label>
           <button type="button" class="primary-btn" id="saveOpsRelease">Save Stage</button>
         </div>
-        <p class="ops-release-meta">Worker minimum: ${esc(release?.workerMin || '1.1.5')}</p>
+        <p class="ops-release-meta">Worker minimum: ${esc(release?.workerMin || '1.1.5')}. Canary features also require cohort membership (server-enforced).</p>
+      </section>
+      <section class="ops-panel" aria-labelledby="opsCohortTitle">
+        <div class="ops-panel__head">
+          <h2 id="opsCohortTitle">Canary cohort</h2>
+          <p>Members may receive server-gated canary features when stage is canary and the feature flag is enabled. Adding members uses admin RPCs only — this panel is read-only.</p>
+        </div>
+        <ul class="ops-cohort-list">
+          ${
+            cohortRows.length
+              ? cohortRows
+                  .map(
+                    (row) =>
+                      `<li><strong>${esc(row.email || row.userId)}</strong>${row.note ? ` — ${esc(row.note)}` : ''}</li>`
+                  )
+                  .join('')
+              : '<li>No cohort members yet.</li>'
+          }
+        </ul>
       </section>
     `;
 

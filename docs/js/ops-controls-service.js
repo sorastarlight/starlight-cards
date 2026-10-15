@@ -27,3 +27,15 @@ export function setOpsReleaseStage(stage, notes = '') {
     requested_notes: notes || null
   });
 }
+
+export function listOpsReleaseCohort() {
+  return rpc('admin_list_ops_release_cohort');
+}
+
+export function setOpsReleaseCohortMember(userId, include, note = '') {
+  return rpc('admin_set_ops_release_cohort_member', {
+    requested_user_id: userId,
+    requested_include: Boolean(include),
+    requested_note: note || null
+  });
+}
