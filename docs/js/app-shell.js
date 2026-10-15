@@ -26,8 +26,9 @@ import {
   shouldAcceptEmbeddedHandshake,
   shouldReenterLoadingOnFrameLoad
 } from './shell-view-readiness.js';
+import { mountReleaseChannelBanner } from './release-channel.js?v=1.0.0';
 
-const SHELL_BUILD = '94.5.8';
+const SHELL_BUILD = '94.5.9';
 const VIEW_READY_TIMEOUT_MS = 6500;
 const MAX_VIEW_RETRIES = 1;
 const SFX_KEY = 'sora-starlight-card-binder-v7-sfx';
@@ -775,6 +776,7 @@ async function hydrateAccount(){
       }
       setShellAvatar(profile?.avatar_url||'', shellFrame);
       access=await getMyStaffAccess();
+      mountReleaseChannelBanner().catch(() => {});
       if(profile && profile.onboarding_complete===false){
         try{
           const nudged=sessionStorage.getItem('starlight-onboarding-nudge');

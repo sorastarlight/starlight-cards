@@ -786,8 +786,24 @@ function wire() {
           )),
     );
   $("#saveDaily")?.addEventListener("click", async () => {
+    const mode = $("#dailyMode").value;
+    const labels = {
+      daily: "one free pack per day",
+      unlimited: "unlimited free packs",
+      disabled: "disabled (no free packs)",
+    };
+    if (
+      !(await window.StarlightUI.confirm({
+        title: "Change Free Daily Pack availability?",
+        message: `Collectors will see Free Daily Packs as ${labels[mode] || mode}. This takes effect immediately.`,
+        confirmText: "Save Availability",
+        danger: mode === "disabled",
+      }))
+    ) {
+      return;
+    }
     try {
-      await setDailyMode($("#dailyMode").value);
+      await setDailyMode(mode);
       say("Free Daily Starlight Pack availability saved.", "success");
     } catch (e) {
       say(e.message, "error");

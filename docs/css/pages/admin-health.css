@@ -19,3 +19,19 @@
 .status{font-weight:800;margin:14px 0}
 .error-text{color:#b4233f}
 .hidden{display:none!important}
+.ops-controls{display:grid;gap:14px;margin:0 0 18px}
+.ops-panel{border:1px solid #dce9fb;border-radius:20px;padding:18px;background:#fff}
+.ops-panel__head h2{margin:0 0 6px;color:#27468b;font-size:1.12rem}
+.ops-panel__head p{margin:0 0 14px;color:#4d5f84;font-size:.92rem;line-height:1.45}
+.ops-pause-list{display:grid;gap:10px}
+.ops-pause-row{display:flex;justify-content:space-between;gap:14px;align-items:center;padding:12px 14px;border-radius:14px;background:#f6f8fd;border:1px solid #e4eefc}
+.ops-pause-row.is-paused{background:#fff8f8;border-color:#ffd0d8}
+.ops-pause-row strong{display:block;color:#27468b}
+.ops-pause-row p{margin:4px 0 6px;color:#4d5f84;font-size:.88rem}
+.ops-state{display:inline-block;font-size:.78rem;font-weight:850;color:#34599c;text-transform:uppercase;letter-spacing:.04em}
+.ops-pause-row.is-paused .ops-state{color:#b4233f}
+.ops-release-row{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+.ops-release-row label{display:grid;gap:6px;font-weight:750;color:#27468b;font-size:.9rem}
+.ops-release-row select,.ops-release-row input{min-width:180px;padding:8px 10px;border-radius:10px;border:1px solid #c9daf5;background:#fff}
+.ops-release-notes{flex:1 1 220px}
+.ops-release-meta{margin:12px 0 0;color:#4d5f84;font-size:.88rem}

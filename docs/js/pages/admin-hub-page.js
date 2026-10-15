@@ -116,13 +116,13 @@ const HUB_SECTIONS = [
   {
     id: 'ops',
     title: 'Ops',
-    hint: 'Integrity checks and backups',
+    hint: 'Integrity checks, backups, pauses, and release stage',
     tools: [
       {
         id: 'health',
         href: 'admin-health.html',
         title: 'Database Health',
-        blurb: 'Run integrity checks and download a backup before repairs.'
+        blurb: 'Run integrity checks, download backups, pause shop/trades/conversions, and set release stage.'
       }
     ]
   }
@@ -167,12 +167,23 @@ try {
     role.textContent = formatStaffRole(access);
     content.hidden = false;
     content.classList.remove('admin-hidden');
+    const canAdmin = Boolean(access.canManageRoles || access.canManageCodes);
+    const canModerate = Boolean(access.canModerate);
     applyAdminCapabilityGates({
+      ui: canAdmin,
+      website: canAdmin,
+      news: Boolean(access.isStaff),
+      notifications: canAdmin,
       codes: Boolean(access.canManageCodes),
+      gifts: Boolean(access.canManageCodes),
       boosters: Boolean(access.canManageCodes),
+      quests: canAdmin,
       roles: Boolean(access.canManageRoles),
       users: Boolean(access.canManageRoles),
-      audit: Boolean(access.canViewAuditLog)
+      moderation: canModerate,
+      audit: Boolean(access.canViewAuditLog),
+      twitch: canAdmin,
+      health: canAdmin
     });
   }
 } catch (error) {

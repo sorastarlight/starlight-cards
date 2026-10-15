@@ -12,34 +12,42 @@ Original audit: `C:\Users\FET\Documents\Codex\2026-10-13\referenced-chatgpt-conv
 
 ## Overhaul status (honest)
 
-**Not complete as a full Phase 0–6 audit delivery.** Security/reward-integrity slice landed; accessibility, performance lab baselines, remaining admin ops, and staged release readiness are still required.
+Required slices 1–5 are implemented with evidence. Remaining items below are **blocked** (external access) or **optional backlog** — not silent skips of required work.
 
-### Security slice (required — done)
+### 1. Security / reward integrity — done
 
-- Privileged RPC matrix: `scripts/qa-privileged-rpc-matrix.mjs` → `.local-review/privileged-rpc-matrix-evidence.json` **pass**
-- Legacy import trust + Twitch eligibility migrations + Worker **1.1.5**
-- Admin NULL role-gate fix (`20261015013346`) — collectors could previously pass `actor_role NOT IN` when role was NULL
 - Evidence: `docs/OVERHAUL_SECURITY_SLICE.md`
+- Privileged RPC matrix pass; legacy import trust; Twitch eligibility locks; admin NULL role-gate fix
+- Worker **1.1.5**
 
-### Externally blocked
+### 2. Accessibility / journey parity — done with blocked SR
 
-- Safe QA-linked Worker EventSub retry — QA A/B have **0** Twitch links; do not trigger viewer rewards.
+- Evidence: `docs/OVERHAUL_A11Y_SLICE.md`
+- Skip link, lightbox Tab trap, reduced-motion/zoom/mobile checks recorded
+- **Still required when tooling available:** full screen-reader journey pass (not claimed WCAG AA)
 
-### A11y slice (required — partial)
+### 3. Performance lab baselines — done
 
-- Skip link + PNG lightbox Tab trap shipped; evidence `docs/OVERHAUL_A11Y_SLICE.md`
-- **Not** WCAG AA: screen-reader full journeys still unavailable in this environment
+- Evidence: `docs/OVERHAUL_PERF_SLICE.md`
+- Lab ≠ field p75 (traffic limitation, not a stop)
 
-### Perf slice (required — lab baselines established)
+### 4. Admin ops — done
 
-- Lighthouse lab baselines + home CLS reserve-space fix — `docs/OVERHAUL_PERF_SLICE.md`
-- Lab ≠ field p75; mobile LCP inflated by slow-4G throttle
+- Evidence: `docs/OVERHAUL_ADMIN_OPS_SLICE.md`
+- Hub capability gates; Twitch/daily confirms; odds validation retained; ops pauses + audit; Health UI
 
-### Still required (not optional)
+### 5. Release readiness — done with blocked disposable restore
 
-- Screen-reader manual pass when tooling available (still required; not optional)
-- Admin ops completion against audit (roles, odds, bulk confirm, audit, pause)
-- Release readiness (compat matrix, rollback/backup rehearsal, staged mechanism)
+- Evidence: `docs/OVERHAUL_RELEASE_READINESS.md`
+- Compat matrix; pause rollback rehearsal; staged `stable`/`canary`; backup shape script
+- **Blocked:** full backup restore onto a disposable Supabase project (needs disposable target + staff export)
+
+### Externally blocked (required when access arrives)
+
+- Safe QA-linked Worker EventSub **live retry** (QA A/B have **0** Twitch links)
+- Staff-positive browser pause toggles (needs owner/admin browser session)
+- Screen-reader full journeys
+- Disposable-project backup restore drill
 
 ### Optional backlog
 
@@ -53,9 +61,9 @@ Original audit: `C:\Users\FET\Documents\Codex\2026-10-13\referenced-chatgpt-conv
 | Item | Evidence |
 | --- | --- |
 | Security slice | Worker **1.1.5**; admin NULL gates **0** vulnerable; RPC matrix pass |
-| Daily safe DOM | `1c28b25`; daily **1.7.6** |
-| Reveal favorites | `59181c3`; reveal **1.5.23** |
-| Progression | `18d5c32`; QA A wallet match |
+| Ops pauses | migrations `20261015015020`, `20261015015155`; features live after toggle rehearsal |
+| Release stage | `stable`; staff canary banner only |
+| Backup shape | `node scripts/qa-backup-shape.mjs` |
 | `npm run check` | run after each ship |
 
 ## Notes

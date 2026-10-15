@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="css/style.css?v=1.0.2">
   <link rel="stylesheet" href="css/shared-ui.css?v=1.6.16">
   <link rel="stylesheet" href="css/pages/admin-shell.css?v=1.0.0">
-  <link rel="stylesheet" href="css/pages/admin-health.css?v=1.1.0">
+  <link rel="stylesheet" href="css/pages/admin-health.css?v=1.2.0">
   <link rel="stylesheet" href="css/qol-ui.css?v=94.2.8">
   <script src="js/browser-performance.js?v=1.0.0" defer></script>
 </head>
@@ -18,7 +18,7 @@
     <header class="admin-suite-header">
       <div>
         <h1>Database Health &amp; Backup</h1>
-        <p class="admin-suite-lead">Find data problems before they become haunted buttons, broken packs, or missing cards.</p>
+        <p class="admin-suite-lead">Find data problems before they become haunted buttons, broken packs, or missing cards. Pause shop, conversions, or trades here without changing payout rules.</p>
       </div>
       <div class="admin-suite-actions health-actions">
         <button class="secondary-btn admin-btn" id="refresh">↻ Run Health Check</button>
@@ -26,13 +26,14 @@
       </div>
     </header>
     <p id="status" class="admin-status status">Loading database health…</p>
+    <div id="opsControls" class="ops-controls" hidden></div>
     <div id="content" class="admin-panel health-shell hidden">
       <div id="summary" class="health-summary"></div>
       <div id="checks" class="health-list"></div>
     </div>
     <a class="admin-back-link" href="admin-hub.html">Return to Administration Hub</a>
   </div>
-  <script type="module" src="js/pages/admin-health-page.js?v=1.1.0"></script>
+  <script type="module" src="js/pages/admin-health-page.js?v=1.2.0"></script>
   <script src="js/shared-ui.js?v=1.6.16"></script>
   <script src="js/qol-ui.js?v=94.2.8" defer></script>
 </body>
