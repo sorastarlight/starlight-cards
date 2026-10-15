@@ -14,7 +14,7 @@ Original audit: `C:\Users\FET\Documents\Codex\2026-10-13\referenced-chatgpt-conv
 
 **Not complete as a full Phase 0–6 audit delivery.** Authorized collector-integrity and UX slices shipped and are live. Gaps remain in measured performance, full accessibility, admin workflows, staged rollout, and externally blocked Worker live retry.
 
-Latest required fix: daily pull-list safe DOM (`daily-booster-page.js` **1.7.6**) — removes catalog-field `innerHTML` interpolation called out in the audit.
+Latest required fix: daily pull-list safe DOM (`1c28b25`, `daily-booster-page.js` **1.7.6**) — removes catalog-field `innerHTML` interpolation called out in the audit. Pages deploy success: https://github.com/sorastarlight/starlight-cards/actions/runs/38663720493
 
 ### Externally blocked
 
@@ -33,10 +33,11 @@ Latest required fix: daily pull-list safe DOM (`daily-booster-page.js` **1.7.6**
 
 | Item | Evidence |
 | --- | --- |
-| HEAD overhaul favorites | `59181c3` Pages success; reveal **1.5.23** live |
+| HEAD daily safe DOM | `1c28b25` Pages success; daily **1.7.6** |
+| Reveal favorites | `59181c3`; reveal **1.5.23** |
 | Progression | `18d5c32`; QA A UI matched wallet XP 63 / bits 0 / season ended |
 | Twitch worker health | **1.1.4**; admin Twitch UI **1.4.3** |
-| `npm run check` | **237/237** at last local gate |
+| `npm run check` | **237/237** |
 
 ## Notes
 
