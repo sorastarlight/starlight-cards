@@ -8,7 +8,9 @@ Date: 2026-10-15 (updated). Milestone: V1.0 foundation / audit release readiness
 | --- | --- | --- | --- |
 | Compat matrix (FE / Worker / DB) | Yes | Documented below | — |
 | Ops pause rollback (isolated) | Yes | Local integrity suite + prior prod settings restore | Prod UI toggle (avoid for evidence) |
-| Backup restore disposable Postgres | Yes | `starlight_backup_restore_qa` via `qa-backup-restore-local.mjs` | Auth/Storage/full pg_dump |
+| JSON catalog backup row-load | Yes | `starlight_backup_restore_qa` via `qa-backup-restore-local.mjs` | — |
+| Genuine `pg_dump`/`pg_restore` | Yes | `qa-pg-dump-restore-local.mjs` → functions/grants/RLS/constraints/triggers/data + post-restore canary/admin | Production cluster dump |
+| Auth / Storage recovery | Documented | Procedure only — **not executed** (`docs/OVERHAUL_AUTH_STORAGE_RECOVERY.md`) | Platform restore drill on disposable Supabase project |
 | Staged exposure (server-gated) | Yes | Isolated canary allow/deny/disable; prod collectors `allowed:false` | Approved prod cohort member while stage=canary |
 
 ## Compatibility matrix

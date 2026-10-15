@@ -14,7 +14,9 @@ Date: 2026-10-15. Does **not** claim WCAG 2.2 AA conformance.
 | Reduced motion reveal path | Pass (source) | Reveal All surfaced under `prefers-reduced-motion`; unit tests |
 | Mobile layout (390×844) | Pass (lab) | Live binder: no horizontal overflow (`scrollW===clientW`) |
 | 200% zoom / reflow | Pass (lab spot) | Emulated **640×900** viewport (≈200% of 1280-wide layout): binder `scrollWidth===clientWidth`, no overflowing chrome. Note: CSS `zoom:200%` inflated `scrollWidth` without element overflow and was treated as a false positive. |
-| Screen-reader full journey | **Unavailable** | No VoiceOver/NVDA/JAWS session in this environment; do not claim AA |
+| Screen-reader full journey | **Unavailable** | Manual checklist below; do not claim AA |
+| Skip-link keyboard activation (lab) | Pass (2026-10-15) | Local `docs/` serve: focus skip → activate → `#main-content` is activeElement (`tabindex="-1"`) |
+| Admin Health status live region | Fixed | `role="status"` on `#status`; ops panels use `aria-labelledby` (unit-tested) |
 
 ## Explicitly unavailable manual checks
 
