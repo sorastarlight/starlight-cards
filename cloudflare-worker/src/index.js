@@ -705,13 +705,26 @@ async function processEvent(env, payload, eventId, eventType) {
       }
     }
     try {
-      await deliverSeasonUnlock(env, {
+      const seasonResult = await deliverSeasonUnlock(env, {
         twitchUserId,
         twitchLogin,
         eventId,
         ruleId: rule.id,
         seasonId: rule.season_id
       });
+      if (seasonResult && seasonResult.ignored === true) {
+        await sb(env, `/rest/v1/twitch_reward_events?event_id=eq.${encodeURIComponent(eventId)}`, {
+          method: 'PATCH',
+          body: {
+            status: 'ignored',
+            error_message: String(
+              seasonResult.message || seasonResult.reason || 'Reward eligibility denied.'
+            ),
+            processed_at: new Date().toISOString()
+          }
+        });
+        return;
+      }
       await sb(env, `/rest/v1/twitch_reward_events?event_id=eq.${encodeURIComponent(eventId)}`, {
         method: 'PATCH',
         body: { status: 'delivered', processed_at: new Date().toISOString() }
@@ -797,7 +810,7 @@ async function processEvent(env, payload, eventId, eventType) {
   }
 
   try {
-    await sb(env, '/rest/v1/rpc/apply_twitch_reward_v890', {
+    const applied = await sb(env, '/rest/v1/rpc/apply_twitch_reward_v890', {
       method: 'POST',
       body: {
         requested_user_id: connection.user_id,
@@ -813,6 +826,18 @@ async function processEvent(env, payload, eventId, eventType) {
         requested_granted_by: null
       }
     });
+    // DB enforces cooldown / max_claims under lock; treat ignored results as non-delivery.
+    if (applied && applied.ignored === true) {
+      await sb(env, `/rest/v1/twitch_reward_events?event_id=eq.${encodeURIComponent(eventId)}`, {
+        method: 'PATCH',
+        body: {
+          status: 'ignored',
+          error_message: String(applied.message || applied.reason || 'Reward eligibility denied.'),
+          processed_at: new Date().toISOString()
+        }
+      });
+      return;
+    }
     await sb(env, `/rest/v1/twitch_reward_events?event_id=eq.${encodeURIComponent(eventId)}`, {
       method: 'PATCH',
       body: { status: 'delivered', processed_at: new Date().toISOString() }
@@ -939,7 +964,7 @@ export default {
         return json({
           ok: missing.length === 0,
           service: 'starlight-twitch-worker',
-          version: '1.1.4',
+          version: '1.1.5',
           missingConfig: missing
         }, missing.length ? 503 : 200);
       }
