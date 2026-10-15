@@ -2,6 +2,13 @@
  * Pure favorites helpers (V1.1) — safe for Node tests without a DOM.
  */
 
+export function favoriteButtonLabel(cardName, isFavorite, { saving = false, error = false } = {}) {
+  const name = String(cardName || 'card').trim() || 'card';
+  if (saving) return `Saving favorite for ${name}`;
+  if (error) return `Retry favorite for ${name}`;
+  return isFavorite ? `Remove ${name} from favorites` : `Add ${name} to favorites`;
+}
+
 export function toggleFavoriteInStore(store = {}, cardId) {
   const next = { ...(store && typeof store === 'object' ? store : {}) };
   const id = String(cardId || '');

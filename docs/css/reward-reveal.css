@@ -1,5 +1,5 @@
 /*
- * Approved reveal presentation baseline: v1.5.22.
+ * Approved reveal presentation baseline: v1.5.23.
  * Keep its motion contract intact unless this version and its regression test
  * are intentionally advanced together.
  */
@@ -1214,10 +1214,58 @@
 }
 
 .st-r3-result-art {
+  position: relative;
   display: block;
   width: 100%;
   aspect-ratio: 2.5 / 3.5;
   border-radius: 13px 13px 0 0;
+}
+
+.st-r3-result-favorite {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(28, 23, 48, 0.72);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.28);
+  font-size: 1.05rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.st-r3-result-favorite.is-active {
+  color: #ffe08a;
+  border-color: rgba(255, 224, 138, 0.9);
+  background: rgba(64, 40, 96, 0.88);
+}
+
+.st-r3-result-favorite.is-saving {
+  opacity: 0.72;
+  cursor: wait;
+}
+
+.st-r3-result-favorite.is-error {
+  border-color: #ff8a9a;
+  box-shadow: 0 0 0 2px rgba(255, 100, 120, 0.35);
+}
+
+.st-r3-result-favorite:focus-visible {
+  outline: 3px solid rgba(107, 198, 248, 0.95);
+  outline-offset: 2px;
+}
+
+.st-r3-result-favorite:disabled {
+  cursor: wait;
 }
 
 .st-r3-result-image {

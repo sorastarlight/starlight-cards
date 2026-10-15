@@ -1,3 +1,5 @@
+import { favoriteButtonLabel } from './favorite-utils.js';
+
 const DEFAULT_BACK = 'site_assets/StarlightCard_Back_NewLogo.png';
 const ALLOWED_RARITIES = new Set(['common', 'uncommon', 'rare', 'epic', 'legendary']);
 const MAX_PILE_LAYERS = 8;
@@ -277,7 +279,7 @@ function acquireRevealViewportLock(doc) {
   };
 }
 
-export const REVEAL_PRESENTATION_VERSION = '1.5.22';
+export const REVEAL_PRESENTATION_VERSION = '1.5.23';
 
 const REVEAL_STYLESHEET_ID = `starlight-reveal-v${REVEAL_PRESENTATION_VERSION.replace(/\./g, '')}`;
 const REVEAL_STYLESHEET_URL = new URL(
@@ -841,6 +843,113 @@ export async function revealRewardSequence(cards = [], options = {}) {
       stage.scrollTop = 0;
     };
 
+    const favoriteButtonsByCard = new Map();
+    let favoriteEpoch = null;
+    let favoritesSignedIn = false;
+
+    const paintFavoriteButton = (button, { isFavorite, saving = false, error = false } = {}) => {
+      const active = Boolean(isFavorite);
+      button.classList.toggle('is-active', active);
+      button.classList.toggle('is-saving', saving);
+      button.classList.toggle('is-error', error);
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
+      button.setAttribute('aria-busy', saving ? 'true' : 'false');
+      button.disabled = saving;
+      button.textContent = active ? '★' : '☆';
+      button.setAttribute(
+        'aria-label',
+        favoriteButtonLabel(button.dataset.cardName || 'card', active, { saving, error })
+      );
+      if (error) button.title = 'Favorite could not save. Activate again to retry.';
+      else button.removeAttribute('title');
+    };
+
+    const syncFavoriteButtons = (cardId, state) => {
+      const id = String(cardId || '');
+      for (const button of favoriteButtonsByCard.get(id) || []) {
+        paintFavoriteButton(button, state);
+      }
+    };
+
+    const notifyFavoriteError = (message) => {
+      if (window.StarlightUI?.toast) {
+        window.StarlightUI.toast(message, 'error');
+        return;
+      }
+      liveStatus.textContent = message;
+    };
+
+    const loadFavoriteService = async () => {
+      try {
+        return await import('./favorite-service.js');
+      } catch (error) {
+        console.error('[Starlight] Favorite service unavailable in reveal results:', error);
+        return null;
+      }
+    };
+
+    const handleResultFavoriteClick = async (button) => {
+      if (!favoritesSignedIn || button.disabled) return;
+      const cardId = String(button.dataset.cardId || '');
+      if (!cardId) return;
+      const nextState = button.getAttribute('aria-pressed') !== 'true';
+      syncFavoriteButtons(cardId, { isFavorite: nextState, saving: true, error: false });
+      const favoriteService = await loadFavoriteService();
+      if (!favoriteService?.setCardFavorite) {
+        syncFavoriteButtons(cardId, { isFavorite: !nextState, saving: false, error: true });
+        notifyFavoriteError('Favorite could not save. Activate the star again to retry.');
+        return;
+      }
+      const result = await favoriteService.setCardFavorite(cardId, nextState, { epoch: favoriteEpoch });
+      if (result?.skipped || result?.reason === 'stale-epoch' || result?.reason === 'stale-epoch-after-rpc') {
+        // Account switched mid-flight — leave the new account's favorites alone.
+        return;
+      }
+      if (!result?.ok) {
+        syncFavoriteButtons(cardId, { isFavorite: !nextState, saving: false, error: true });
+        notifyFavoriteError(
+          result?.reason === 'signed-out'
+            ? 'Sign in to favorite cards.'
+            : 'Favorite could not save. Activate the star again to retry.'
+        );
+        return;
+      }
+      favoriteEpoch = result.epoch || favoriteEpoch;
+      syncFavoriteButtons(cardId, { isFavorite: nextState, saving: false, error: false });
+      liveStatus.textContent = nextState
+        ? `${button.dataset.cardName || 'Card'} added to favorites.`
+        : `${button.dataset.cardName || 'Card'} removed from favorites.`;
+    };
+
+    const hydrateResultFavorites = async () => {
+      const cardIds = [...favoriteButtonsByCard.keys()];
+      if (!cardIds.length) return;
+      const favoriteService = await loadFavoriteService();
+      if (!favoriteService?.fetchFavoriteStates) {
+        for (const buttons of favoriteButtonsByCard.values()) {
+          for (const button of buttons) button.hidden = true;
+        }
+        return;
+      }
+      const loaded = await favoriteService.fetchFavoriteStates(cardIds);
+      if (loaded?.reason === 'stale-epoch') return;
+      favoritesSignedIn = Boolean(loaded?.signedIn);
+      favoriteEpoch = loaded?.epoch || favoriteEpoch;
+      if (!favoritesSignedIn) {
+        for (const buttons of favoriteButtonsByCard.values()) {
+          for (const button of buttons) button.hidden = true;
+        }
+        return;
+      }
+      for (const cardId of cardIds) {
+        syncFavoriteButtons(cardId, {
+          isFavorite: Boolean(loaded?.states?.[cardId]),
+          saving: false,
+          error: false
+        });
+      }
+    };
+
     const populateResults = () => {
       if (resultsPopulated) return;
       resultsPopulated = true;
@@ -853,6 +962,24 @@ export async function revealRewardSequence(cards = [], options = {}) {
           alt: `${card.name} card artwork`,
           defer: false
         });
+        const cardId = String(card.id || '');
+        if (cardId) {
+          const favorite = doc.createElement('button');
+          favorite.type = 'button';
+          favorite.className = 'st-r3-result-favorite';
+          favorite.dataset.cardId = cardId;
+          favorite.dataset.cardName = card.name || 'card';
+          paintFavoriteButton(favorite, { isFavorite: false, saving: true, error: false });
+          favorite.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            void handleResultFavoriteClick(favorite);
+          });
+          const list = favoriteButtonsByCard.get(cardId) || [];
+          list.push(favorite);
+          favoriteButtonsByCard.set(cardId, list);
+          art.append(favorite);
+        }
         const copy = createElement(doc, 'div', 'st-r3-result-copy');
         const name = createElement(doc, 'h4', '', card.name);
         const detail = createElement(doc, 'p', '', cardDescription(card) || fallbackMeta);
@@ -877,6 +1004,8 @@ export async function revealRewardSequence(cards = [], options = {}) {
       });
       resultsGrid.append(fragment);
       window.StarlightPerspectiveCard?.scanPerspectiveCards?.(resultsGrid);
+      // Always hydrate from the authenticated favorite service so replay keeps live state.
+      void hydrateResultFavorites();
     };
 
     const prepareCurrentCard = () => {

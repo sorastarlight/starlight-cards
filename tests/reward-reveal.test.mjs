@@ -192,8 +192,8 @@ test('locks the approved reveal presentation and motion baseline', async () => {
   const stylesheet = await readFile(new URL('../docs/css/reward-reveal.css', import.meta.url), 'utf8');
   const contractHash = createHash('sha256').update(normalizeMotionContract(stylesheet)).digest('hex');
 
-  assert.equal(REVEAL_PRESENTATION_VERSION, '1.5.22');
-  assert.match(stylesheet, /Approved reveal presentation baseline: v1\.5\.22/);
+  assert.equal(REVEAL_PRESENTATION_VERSION, '1.5.23');
+  assert.match(stylesheet, /Approved reveal presentation baseline: v1\.5\.23/);
   assert.equal(contractHash, '44882aa4bf9bac683ed16e54958b45a128d39ac525cc314535ed601078c16597');
   assert.match(stylesheet, /\.st-r3-overlay\.is-embed-anchored/);
   assert.match(stylesheet, /\.st-r3-skip-bar/);
@@ -266,7 +266,7 @@ test('keeps every production reward entry point on the canonical reveal engine',
   ].map(file => readFile(new URL(`../docs/js/pages/${file}`, import.meta.url), 'utf8')));
 
   consumers.forEach(source => {
-    assert.match(source, /reward-reveal\.js\?v=1\.5\.22/);
+    assert.match(source, /reward-reveal\.js\?v=1\.5\.23/);
     assert.match(source, /revealRewardSequence\s*\(/);
     assert.doesNotMatch(source, /@keyframes|stR3CardSpin|stR3PackTop/);
   });

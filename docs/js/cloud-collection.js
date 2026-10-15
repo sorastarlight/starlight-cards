@@ -641,7 +641,7 @@ async function loadBinderApplication() {
     }
 
     window.StarlightCardFilters = await import('./card-filter-utils.js?v=1.1.2');
-    window.StarlightFavoriteUtils = await import('./favorite-utils.js?v=1.0.0');
+    window.StarlightFavoriteUtils = await import('./favorite-utils.js?v=1.0.1');
 
     return new Promise((resolve, reject) => {
         const perspectiveScript = document.createElement("script");
